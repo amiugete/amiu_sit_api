@@ -18,21 +18,6 @@ db_name = os.getenv("DB_NAME")
 ################# Strnga di connessione base dati ##########################
 DATABASE_URL = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db_name}"
 engine = create_engine(DATABASE_URL)
-
-################ Funzioni di mappatura Resultset query########################
-# Tipo generico per tipizzazione dinamica
-T = TypeVar('T')
-def generic_mapper_list(risultato, model_class: Type[T]) -> List[T]:
-    return [model_class(**row) for row in risultato.mappings()]
-
-def generic_mapper_first(risultato, model_class: Type[T]) -> T | None:
-    row = risultato.mappings().first()
-    if row:
-        return model_class(**row)
-    return None
-########################################################################
-
-
 logger = logging.getLogger(__name__)
 
 
