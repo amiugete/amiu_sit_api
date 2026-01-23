@@ -1,7 +1,8 @@
 
 
-def PreparedStatementPiazzole(comune,municipio,via,pap) -> str:
-    base_query =  """
+def PreparedStatementPiazzole() -> str:
+    """Preparazione della query per il recupero delle piazzole con filtri opzionali(pap,via,comune,municipio)"""
+    return  """
 		with queryPiazzole as (
         select p.id_piazzola ,v.id_via, v.nome as via, c.id_comune, c.descr_comune as comune,m.id_municipio, m.descrizione as municipio,
         q.nome  as quartiere, p.numero_civico,
@@ -45,26 +46,6 @@ def PreparedStatementPiazzole(comune,municipio,via,pap) -> str:
 		select * from queryPiazzole 
 		where (:pap IS NULL OR pap = :pap)
 		and(:via is null or id_via = :via)
-		and(:comune is null or id_comune = :comune);
+		and(:comune is null or id_comune = :comune)
 		and(:municipio is null or id_municipio = :municipio)
     """
-    conditions = []
-    params = {}
-
-    if comune:
-        conditions.append("c.id_comune = :comune")
-        params["comune"] = comune
-
-    if municipio:
-        conditions.append("m.id_municipio = :municipio")
-        params["municipio"] = municipio
-
-    if via is not None:
-        conditions.append("a.id_via = :via")
-        params["via"] = via
-
-    if pap is not None:
-        conditions.append("pap = :pap")
-        params["pap"] = pap
-
-    return {"query": base_query, "params": params}

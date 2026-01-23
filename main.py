@@ -24,14 +24,18 @@ app = FastAPI()
 
 @app.get("/piazzole",response_model=List[Piazzola])
 def lista_piazzole(
-    cod_comune: Optional[int] = Query(None, description="Filtra per comune"),
-    cod_municipio: Optional[int] = Query(None, description="Filtra per municipio"),
-    id_via: Optional[int] = Query(None, description="Filtra per ID della via"),
+    comune: Optional[int] = Query(None, description="Filtra per comune"),
+    municipio: Optional[int] = Query(None, description="Filtra per municipio"),
+    via: Optional[int] = Query(None, description="Filtra per ID della via"),
     pap: Optional[int] = Query(None, ge=0, le=1, description="Filtra per PAP (1 = Sì, 0 = No)"),
 ):
     logger.info("Ricevuta richiesta GET /piazzole")
-    query_select = PreparedStatementPiazzole(cod_comune,cod_municipio,id_via,pap)
-    risultato = execute_query(query_select)
+    query_select = PreparedStatementPiazzole()
+    risultato = execute_query(query_select,{
+        "comune": comune,
+        "municipio": municipio,
+        "via": via,
+        "pap": pap})
     if risultato is None:
         logger.error("Nessun risultato ottenuto dalla query.")
         return []
