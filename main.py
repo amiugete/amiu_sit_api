@@ -1,8 +1,9 @@
-from typing import List,Optional
+from typing import List,Optional,Union
 from fastapi import FastAPI,Query
 from config.database import execute_query
-from models.models import Piazzola,PaginatedResponse
-from repository.piazzoleRepo import prepared_statement_piazzole,prepared_statement_count_piazzole
+from models.models import Piazzola,PaginatedResponse,Via
+from repository.vie_repo import prepared_statement_count_vie,prepared_statement_vie
+from repository.piazzole_repo import prepared_statement_piazzole,prepared_statement_count_piazzole
 import logging
 
 
@@ -14,15 +15,14 @@ logging.basicConfig(
         logging.StreamHandler()         # Scrive su console
     ]
 )
-
 logging.getLogger("watchfiles.main").setLevel(logging.WARNING)
-
 logger = logging.getLogger(__name__)
 
+# Inizializza l'app FastAPI##############################
 app = FastAPI()
 
 
-@app.get("/piazzole",response_model=PaginatedResponse[Piazzola])
+@app.get("/piazzole", response_model=Union[PaginatedResponse[Piazzola], List[Piazzola]])
 def lista_piazzole(
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
@@ -53,21 +53,73 @@ def lista_piazzole(
 
 
     query_select = prepared_statement_piazzole()
-    piazzole = execute_query(query_select,{**params,"limit": limit, "offset": offset})
+    listPiazzole = execute_query(query_select,{**params,"limit": limit, "offset": offset})
 
-    if piazzole is None:
+    if listPiazzole is None:
         logger.info("Nessun risultato ottenuto dalla query.")
         return []
     
-    piazzole = [Piazzola(**row) for row in piazzole.mappings()]
+    listPiazzole = [Piazzola(**row) for row in listPiazzole.mappings()]
     count = count_piazzole.scalar()
 
+
+    if page is None or size is None:
+        logger.info(f"Restituite {count} piazzole.")
+        return listPiazzole
+    
     result = PaginatedResponse[Piazzola]()
     result.total = count #total piazzole con paginazione
-    result.content = piazzole
+    result.content = listPiazzole
     result.page = page
     result.size = size
-    result.pages = (result.total + size - 1) // size  # Calcolo delle pagine totali
-    result.content = piazzole
+    result.pages = (result.total + size - 1) // size if size else 0  # Calcolo delle pagine totali
+    result.content = listPiazzole
     logger.info(f"Restituiti {result.total} piazzole.")
     return result
+
+
+@app.get("/vie", response_model=Union[PaginatedResponse[Via], List[Via]])
+def lista_vie(
+    page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
+    size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
+    comune: Optional[int] = Query(None, description="Filtra per comune")
+):
+    logger.info("Ricevuta richiesta GET /vie")
+    
+    offset = None
+    limit = None 
+    
+    if page is not None and size is not None and size > 0:     
+        offset = (page - 1) * size
+        limit = size
+    
+    params = {"comune": comune}
+    
+    # Query di conteggio
+    query_count_select = prepared_statement_count_vie()
+    count_vie = execute_query(query_count_select, params)
+    
+    # Query principale
+    query_select = prepared_statement_vie()
+    listVie = execute_query(query_select, {**params, "limit": limit, "offset": offset})
+    
+    if listVie is None:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+    
+    listVie = [Via(**row) for row in listVie.mappings()]
+    count = count_vie.scalar()
+
+    if page is None or size is None:
+        logger.info(f"Restituite {count} vie.")
+        return listVie
+
+    listVie = PaginatedResponse[Via]()
+    listVie.total = count
+    listVie.content = listVie
+    listVie.page = page
+    listVie.size = size
+    listVie.pages = (listVie.total + size - 1) // size if size else 0
+    
+    logger.info(f"Restituite {listVie.total} vie.")
+    return listVie

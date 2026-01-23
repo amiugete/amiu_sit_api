@@ -39,3 +39,10 @@ class Piazzola(MyBaseModel):
     num_elementi_privati: int
     lat: float
     lon: float
+
+
+class Via(MyBaseModel):
+    id_via: int
+    nome: str
+    id_comune: int
+
