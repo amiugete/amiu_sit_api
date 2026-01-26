@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel,ConfigDict
 from typing import Optional,Any,TypeVar,Generic
+from datetime import datetime
 
 T = TypeVar('T')
 
@@ -46,3 +47,28 @@ class Via(MyBaseModel):
     nome: str
     id_comune: int
 
+
+class Comune(MyBaseModel):
+    id_comune: int
+    descr_comune: str
+    descr_provincia: str
+    prefisso_utenti: str
+    id_ambito: int
+    cod_istat: str
+
+
+class Civico(MyBaseModel):
+    cod_civico: str
+    numero: int
+    lettera: Optional[str] = None
+    colore: Optional[str] = None
+    testo: Optional[str] = None
+    cod_strada: int
+    nome_via: str
+    id_comune: int
+    id_municipio: Optional[int] = None
+    id_quartiere: Optional[int] = None
+    lat: float
+    lon: float
+    insert_date: Optional[datetime] = None
+    update_date: Optional[datetime] = None

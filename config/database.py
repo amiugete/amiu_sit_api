@@ -30,6 +30,6 @@ def execute_query(sql, params=None):
             connection.commit() # Necessario per INSERT/UPDATE
             return result
    except Exception as e:
-        logger.error(f"Errore connessione al DB: {str(e)}")
+        logger.error(f"Errore SQL o di connessione: {str(e)}")
         return result
    

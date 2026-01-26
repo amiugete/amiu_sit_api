@@ -1,9 +1,11 @@
 from typing import List,Optional,Union
 from fastapi import FastAPI,Query
 from config.database import execute_query
-from models.models import Piazzola,PaginatedResponse,Via
+from models.models import Piazzola,PaginatedResponse,Via,Comune,Civico
 from repository.vie_repo import prepared_statement_count_vie,prepared_statement_vie
 from repository.piazzole_repo import prepared_statement_piazzole,prepared_statement_count_piazzole
+from repository.comuni_repo import prepared_statement_comuni
+from repository.civici_repo import prepared_statement_civici,prepared_statement_count_civici
 import logging
 
 
@@ -19,7 +21,7 @@ logging.getLogger("watchfiles.main").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 # Inizializza l'app FastAPI##############################
-app = FastAPI()
+app = FastAPI(title="API AMIU SIT", version="1.0.0", description="API per l'accesso ai dati geografici di AMIU")
 
 
 @app.get("/piazzole", response_model=Union[PaginatedResponse[Piazzola], List[Piazzola]])
@@ -123,3 +125,74 @@ def lista_vie(
     
     logger.info(f"Restituite {listVie.total} vie.")
     return listVie
+
+
+@app.get("/comuni", response_model=List[Comune])
+def lista_comuni(
+    id_ambito: Optional[int] = Query(None, description="Filtra per ambito"),
+    cod_istat: Optional[str] = Query(None, description="Filtra per codice ISTAT")
+):
+    logger.info("Ricevuta richiesta GET /comuni")
+    
+    params = {
+        "id_ambito": id_ambito,
+        "cod_istat": cod_istat
+    }
+    
+    query_select = prepared_statement_comuni()
+    listComuni = execute_query(query_select, params)
+    
+    if listComuni is None:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+    
+    listComuni = [Comune(**row) for row in listComuni.mappings()]
+    logger.info(f"Restituiti {len(listComuni)} comuni.")
+    return listComuni
+
+
+@app.get("/civici", response_model=Union[PaginatedResponse[Civico], List[Civico]])
+def lista_civici(
+    page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
+    size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
+    id_municipio: Optional[int] = Query(None, description="Filtra per municipio"),
+    id_via: Optional[int] = Query(None, description="Filtra per via")
+):
+    logger.info("Ricevuta richiesta GET /civici")
+    
+    offset = None
+    limit = None 
+    
+    if page is not None and size is not None and size > 0:     
+        offset = (page - 1) * size
+        limit = size
+    
+    params = {"id_municipio": id_municipio, "id_via": id_via}
+    
+    # Query di conteggio
+    query_count_select = prepared_statement_count_civici()
+    count_civici = execute_query(query_count_select, params)
+    
+    # Query principale
+    query_select = prepared_statement_civici()
+    listCivici = execute_query(query_select, {**params, "limit": limit, "offset": offset})
+    
+    if listCivici is None:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+    
+    listCivici = [Civico(**row) for row in listCivici.mappings()]
+    count = count_civici.scalar()
+
+    if page is None or size is None:
+        logger.info(f"Restituiti {count} civici.")
+        return listCivici
+
+    result = PaginatedResponse[Civico]()
+    result.total = count
+    result.content = listCivici
+    result.page = page
+    result.size = size
+    result.pages = (result.total + size - 1) // size if size else 0
+    logger.info(f"Restituiti {result.total} civici.")
+    return result
