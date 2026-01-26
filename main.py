@@ -1,11 +1,14 @@
 from typing import List,Optional,Union
 from fastapi import FastAPI,Query
 from config.database import execute_query
-from models.models import Piazzola,PaginatedResponse,Via,Comune,Civico
+from models.models import Piazzola,PaginatedResponse,Via,Comune,Civico,Quartiere,Ambito,PointOfInterest
 from repository.vie_repo import prepared_statement_count_vie,prepared_statement_vie
 from repository.piazzole_repo import prepared_statement_piazzole,prepared_statement_count_piazzole
 from repository.comuni_repo import prepared_statement_comuni
 from repository.civici_repo import prepared_statement_civici,prepared_statement_count_civici
+from repository.quartieri_repo import prepared_statement_quartieri
+from repository.ambiti_repo import prepared_statement_ambiti
+from repository.point_of_interest_repo import prepared_statement_pointofinterest
 import logging
 
 
@@ -24,7 +27,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="API AMIU SIT", version="1.0.0", description="API per l'accesso ai dati geografici di AMIU")
 
 
-@app.get("/piazzole", response_model=Union[PaginatedResponse[Piazzola], List[Piazzola]])
+@app.get("/piazzole", response_model=Union[List[Piazzola],PaginatedResponse[Piazzola]],description="Recupera la lista delle piazzole con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request",tags=["Interazione con IDEA"])
 def lista_piazzole(
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
@@ -80,7 +83,7 @@ def lista_piazzole(
     return result
 
 
-@app.get("/vie", response_model=Union[PaginatedResponse[Via], List[Via]])
+@app.get("/vie", response_model=Union[List[Via], PaginatedResponse[Via]],description="Recupera la lista delle vie con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request",tags=["Interazione con IDEA"])
 def lista_vie(
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
@@ -127,7 +130,7 @@ def lista_vie(
     return listVie
 
 
-@app.get("/comuni", response_model=List[Comune])
+@app.get("/comuni", response_model=List[Comune],tags=["Interazione con IDEA"])
 def lista_comuni(
     id_ambito: Optional[int] = Query(None, description="Filtra per ambito"),
     cod_istat: Optional[str] = Query(None, description="Filtra per codice ISTAT")
@@ -151,7 +154,7 @@ def lista_comuni(
     return listComuni
 
 
-@app.get("/civici", response_model=Union[PaginatedResponse[Civico], List[Civico]])
+@app.get("/civici", response_model=Union[PaginatedResponse[Civico], List[Civico]], tags=["Interazione con IDEA"], description="Recupera la lista dei civici con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request")
 def lista_civici(
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
@@ -196,3 +199,55 @@ def lista_civici(
     result.pages = (result.total + size - 1) // size if size else 0
     logger.info(f"Restituiti {result.total} civici.")
     return result
+
+
+@app.get("/quartieri", response_model=List[Quartiere], description="Recupera la lista dei quartieri", tags=["Interazione con IDEA"])
+def lista_quartieri(
+    id_municipio: Optional[int] = Query(None, description="Filtra per municipio")
+):
+    logger.info("Ricevuta richiesta GET /quartieri")
+    
+    params = {"id_municipio": id_municipio}
+    
+    query_select = prepared_statement_quartieri()
+    listQuartieri = execute_query(query_select, params)
+    
+    if listQuartieri is None:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+    
+    listQuartieri = [Quartiere(**row) for row in listQuartieri.mappings()]
+    logger.info(f"Restituiti {len(listQuartieri)} quartieri.")
+    return listQuartieri
+
+
+@app.get("/ambiti", response_model=List[Ambito], description="Recupera la lista degli ambiti", tags=["Interazione con IDEA"])
+def lista_ambiti():
+    logger.info("Ricevuta richiesta GET /ambiti")
+    
+    query_select = prepared_statement_ambiti()
+    listAmbiti = execute_query(query_select, {})
+    
+    if listAmbiti is None:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+    
+    listAmbiti = [Ambito(**row) for row in listAmbiti.mappings()]
+    logger.info(f"Restituiti {len(listAmbiti)} ambiti.")
+    return listAmbiti
+
+
+@app.get("/pointofinterest", response_model=List[PointOfInterest], description="Recupera i dettagli dei Punti di Interesse (Rimesse, UT e Scarichi vari)", tags=["Interazione con IDEA"])
+def lista_point_of_interest():
+    logger.info("Ricevuta richiesta GET /point of interest")
+    
+    query_select = prepared_statement_pointofinterest()
+    listPointOfInterest = execute_query(query_select, {})
+    
+    if listPointOfInterest is None:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+    
+    listPointOfInterest = [PointOfInterest(**row) for row in listPointOfInterest.mappings()]
+    logger.info(f"Restituiti {len(listPointOfInterest)} point of interest.")
+    return listPointOfInterest

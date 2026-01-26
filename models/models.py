@@ -72,3 +72,26 @@ class Civico(MyBaseModel):
     lon: float
     insert_date: Optional[datetime] = None
     update_date: Optional[datetime] = None
+
+
+class Quartiere(MyBaseModel):
+    id_quartiere: int
+    id_municipio: Optional[int] = None
+    id_comune: int
+    descrizione: str
+
+
+class Ambito(MyBaseModel):
+    id_ambito: int
+    descr_ambito: str
+
+
+class PointOfInterest(MyBaseModel):
+    id: int
+    via: str
+    numero_civico: Optional[str] = None
+    riferimento: Optional[str] = None
+    note: Optional[str] = None
+    lat: float
+    lon: float
+    tipo: str    
