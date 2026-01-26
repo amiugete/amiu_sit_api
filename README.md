@@ -7,13 +7,18 @@ API REST per la gestione dei dati geografici e amministrativi del sistema inform
 AMIU SIT API è un'applicazione FastAPI che espone endpoint per consultare:
 - **Piazzole**: Punti di raccolta rifiuti con informazioni geografiche e amministrative
 - **Vie**: Strade e percorsi del territorio servito
+- **Comuni**: Comuni del territorio
+- **Civici**: Indirizzi e numeri civici
+- **Quartieri**: Suddivisioni territoriali per municipio
+- **Ambiti**: Raggruppamenti amministrativi
 
 L'API supporta:
-- ✅ Paginazione personalizzabile
-- ✅ Filtri per comune, municipio, via e PAP
+- ✅ Paginazione personalizzabile per piazzole e civici
+- ✅ Filtri avanzati per comune, municipio, via e PAP
 - ✅ Risposte in formato JSON
 - ✅ Logging dettagliato
 - ✅ Connessione sicura a PostgreSQL
+- ✅ Endpoint senza paginazione per dati di lookup (comuni, quartieri, ambiti)
 
 ## 🚀 Installazione
 
@@ -100,17 +105,6 @@ Recupera l'elenco delle piazzole con paginazione opzionale.
   ]
 }
 ```
-
-**Response (senza paginazione):**
-```json
-[
-  {
-    "id_piazzola": 1,
-    ...
-  }
-]
-```
-
 ### GET /vie
 Recupera l'elenco delle vie con paginazione opzionale.
 
@@ -119,19 +113,114 @@ Recupera l'elenco delle vie con paginazione opzionale.
 - `size` (int, opzionale): Elementi per pagina, max 100
 - `comune` (int, opzionale): Filtra per ID comune
 
+**Response (senza paginazione):**
+```json
+[
+  {
+    "id_via": 1,
+    "nome": "Via Roma",
+    "id_comune": 1
+  }
+]
+```
+
+### GET /comuni
+Recupera l'elenco dei comuni.
+
+**Query Parameters:**
+- `id_ambito` (int, opzionale): Filtra per ID ambito
+- `cod_istat` (string, opzionale): Filtra per codice ISTAT
+
+**Response:**
+```json
+[
+  {
+    "id_comune": 1,
+    "descr_comune": "Roma",
+    "descr_provincia": "Roma",
+    "prefisso_utenti": "06",
+    "id_ambito": 1,
+    "cod_istat": "058091"
+  }
+]
+```
+
+### GET /civici
+Recupera l'elenco dei civici con paginazione opzionale.
+
+**Query Parameters:**
+- `page` (int, opzionale): Numero di pagina
+- `size` (int, opzionale): Elementi per pagina, max 100
+- `id_municipio` (int, opzionale): Filtra per municipio
+- `id_via` (int, opzionale): Filtra per ID via
+
 **Response:**
 ```json
 {
-  "total": 500,
-  "page": 1,
-  "size": 100,
-  "pages": 5,
+  "total": 5000,
+  "p├── comuni_repo.py          # Query per comuni
+    ├── civici_repo.py          # Query per civici
+    ├── quartieri_repo.py       # Query per quartieri
+    ├── ambiti_repo.py          # Query per ambiti
+    age": 1,
+  "size": 50,
+  "pages": 100,
   "content": [
     {
-      "idpercorso": 1,
-      "descrizione": "Via Roma"
+    Via**: Modello per i dati delle vie
+- **Comune**: Modello per i dati dei comuni
+- **Civico**: Modello per i dati dei civici
+- **Quartiere**: Modello per i dati dei quartieri
+- **Ambito**: Modello per i dati degli ambiti
+      "numero": 42,
+      "lettera": "A",
+      "colore": "rosso",
+      "testo": "42A",
+      "cod_strada": "STR001",
+      "nome_via": "Via Roma",
+      "id_comune": 1,
+      "id_municipio": 1,
+      "id_quartiere": 5,
+      "lat": 41.8919,
+      "lon": 12.4949,
+      "insert_date": "2024-01-15T10:30:00",
+      "update_date": "2024-01-20T14:22:00"
     }
   ]
+}
+```
+
+### GET /quartieri
+Recupera l'elenco dei quartieri.
+
+**Query Parameters:**
+- `id_municipio` (int, opzionale): Filtra per ID municipio
+
+**Response:**
+```json
+[
+  {
+    "id_quartiere": 1,
+    "id_municipio": 1,
+    "id_comune": 1,
+    "descrizione": "Quartiere Centro"
+  }
+]
+```
+
+### GET /ambiti
+Recupera l'elenco degli ambiti.
+
+**Query Parameters:** nessuno
+
+**Response:**
+```json
+[
+  {
+    "id_ambito": 1,
+    "descr_ambito": "Ambito Centro"
+  }
+] ]
 }
 ```
 
