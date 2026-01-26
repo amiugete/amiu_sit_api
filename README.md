@@ -167,11 +167,6 @@ Recupera l'elenco dei civici con paginazione opzionale.
   "pages": 100,
   "content": [
     {
-    Via**: Modello per i dati delle vie
-- **Comune**: Modello per i dati dei comuni
-- **Civico**: Modello per i dati dei civici
-- **Quartiere**: Modello per i dati dei quartieri
-- **Ambito**: Modello per i dati degli ambiti
       "numero": 42,
       "lettera": "A",
       "colore": "rosso",
