@@ -1,8 +1,12 @@
 # models.py
 
-from pydantic import BaseModel,ConfigDict
-from typing import Optional,Any,TypeVar,Generic
+from logging import log
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from typing import Optional, Any, TypeVar, Generic
 from datetime import datetime
+from fastapi.security import OAuth2PasswordRequestForm
+
+import re
 
 T = TypeVar('T')
 
@@ -95,3 +99,13 @@ class PointOfInterest(MyBaseModel):
     lat: float
     lon: float
     tipo: str    
+
+
+class User(MyBaseModel):
+    id_user: int
+    name: str
+    email: Optional[str] = None
+
+
+
+

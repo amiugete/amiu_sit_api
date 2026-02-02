@@ -159,12 +159,6 @@ Recupera l'elenco dei civici con paginazione opzionale.
 ```json
 {
   "total": 5000,
-  "p├── comuni_repo.py          # Query per comuni
-    ├── civici_repo.py          # Query per civici
-    ├── quartieri_repo.py       # Query per quartieri
-    ├── ambiti_repo.py          # Query per ambiti
-    age": 1,
-  "size": 50,
   "pages": 100,
   "content": [
     {
@@ -219,6 +213,24 @@ Recupera l'elenco degli ambiti.
 ] ]
 }
 ```
+
+### POST /token
+Genera un token JWT per autenticare l'utente tramite credenziali LDAP.
+
+**Request Body:**
+- `username` (string): Nome utente per l'autenticazione
+- `password` (string): Password associata all'utente
+
+**Response:**
+```json
+{
+  "access_token": "<jwt_token>",
+  "token_type": "bearer"
+}
+```
+
+**Errori Possibili:**
+- **401 Unauthorized**: Credenziali non valide o utente non trovato
 
 ## 📁 Struttura del Progetto
 

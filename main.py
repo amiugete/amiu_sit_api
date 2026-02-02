@@ -1,7 +1,7 @@
 from typing import List,Optional,Union
-from fastapi import FastAPI,Query
+from fastapi import FastAPI,Query,Depends, HTTPException, status
 from config.database import execute_query
-from models.models import Piazzola,PaginatedResponse,Via,Comune,Civico,Quartiere,Ambito,PointOfInterest
+from models.models import  Piazzola,PaginatedResponse, User,Via,Comune,Civico,Quartiere,Ambito,PointOfInterest
 from repository.vie_repo import prepared_statement_count_vie,prepared_statement_vie
 from repository.piazzole_repo import prepared_statement_piazzole,prepared_statement_count_piazzole
 from repository.comuni_repo import prepared_statement_comuni
@@ -10,7 +10,12 @@ from repository.quartieri_repo import prepared_statement_quartieri
 from repository.ambiti_repo import prepared_statement_ambiti
 from repository.point_of_interest_repo import prepared_statement_pointofinterest
 import logging
-
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm,HTTPBearer,HTTPAuthorizationCredentials
+from passlib.context import CryptContext
+from config.ldap_amiu import verifica_utente_amiu_LDAP
+from config.jwt_token_config import create_access_token,check_jwt_token
+from repository.users_repo import check_user_db
+from fastapi.openapi.utils import get_openapi
 
 logging.basicConfig(
     level=logging.INFO,
@@ -23,8 +28,86 @@ logging.basicConfig(
 logging.getLogger("watchfiles.main").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
+
+# Utility per l'hashing delle password
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+bearer_scheme = HTTPBearer()
 # Inizializza l'app FastAPI##############################
 app = FastAPI(title="API AMIU SIT", version="1.0.0", description="API per l'accesso ai dati geografici di AMIU")
+
+
+# Dipendenza per ottenere l'utente corrente dal token JWT
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
+):
+    # Verifica il token JWT
+    token = credentials.credentials
+    logger.info("Verifica del token JWT in corso...")
+    logger.info(token)
+    try:
+        payload = check_jwt_token(token)
+        logger.info(f"Token valido per l'utente {payload.get('sub')}")
+    except Exception as e:
+        logger.warning(f"Token non valido: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token non valido",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return payload
+
+    
+
+
+
+@app.post("/token", tags=["Autenticazione"], description="Genera un token JWT per autenticare")
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    """Endpoint per l'autenticazione e la generazione del token JWT"""
+    username = form_data.username
+    password = form_data.password
+    logger.info(f"Ricevuta richiesta di login per l'utente {username}")
+    # Verifica le credenziali tramite LDAP
+    is_authenticated, msg = verifica_utente_amiu_LDAP(username, password)
+
+    # Se non è in Active directory, ritorna errore Credenziali non valide
+    if not is_authenticated:
+        logger.warning(f"Autenticazione fallita per l'utente {username}: {msg}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenziali non valide",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+        # Verifica l'esistenza dell'utente nel database
+    user_query = check_user_db(username)
+    user_record = execute_query(user_query, {"name": username})
+
+    user_record = user_record.mappings().first() if user_record else None
+
+    if not user_record:
+        logger.warning(f"Utente {username} non trovato nel database.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Utente non trovato",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    user = User(**user_record)
+
+    try:
+        access_token = create_access_token(data={"sub": username, "user_id": user.id_user, "email": user.email})
+        logger.info(f"Utente {username} autenticato con successo.")
+    except Exception as e:
+     logger.error(f"Errore durante la creazione del token per l'utente {username}: {e}")
+     raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Utente non autorizzato",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+  
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 @app.get("/piazzole", response_model=Union[List[Piazzola],PaginatedResponse[Piazzola]],description="Recupera la lista delle piazzole con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request",tags=["Interazione con IDEA"])
@@ -130,13 +213,18 @@ def lista_vie(
     return listVie
 
 
-@app.get("/comuni", response_model=List[Comune],tags=["Interazione con IDEA"])
+@app.get("/comuni", response_model=List[Comune],tags=["Interazione con IDEA"],
+         description="Recupera la lista dei comuni. Richiede un Bearer Token per l'autenticazione.")
 def lista_comuni(
+    payload: str = Depends(get_current_user),
     id_ambito: Optional[int] = Query(None, description="Filtra per ambito"),
     cod_istat: Optional[str] = Query(None, description="Filtra per codice ISTAT")
 ):
+    """Endpoint per recuperare la lista dei comuni con autenticazione."""
     logger.info("Ricevuta richiesta GET /comuni")
-    
+    logger.info(f"Utente autenticato: {payload.get('sub')} (ID: {payload.get('user_id')})")
+
+
     params = {
         "id_ambito": id_ambito,
         "cod_istat": cod_istat
@@ -144,7 +232,7 @@ def lista_comuni(
     
     query_select = prepared_statement_comuni()
     listComuni = execute_query(query_select, params)
-    
+
     if listComuni is None:
         logger.info("Nessun risultato ottenuto dalla query.")
         return []
