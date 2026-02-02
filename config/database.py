@@ -2,7 +2,6 @@
 import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
-from typing import TypeVar, Type, List
 import logging
 
 # Carica le variabili dal file .env
@@ -24,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 #################### Funzione di esecuzione query ########################
 def execute_query(sql, params=None):
-   try: 
+   try:   
         with engine.connect() as connection:
             result = connection.execute(text(sql), params or {})
             connection.commit() # Necessario per INSERT/UPDATE
