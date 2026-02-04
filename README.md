@@ -99,47 +99,21 @@ Recupera l'elenco delle piazzole con paginazione opzionale.
       "elementi": "Carta,Vetro,Plastica",
       "pap": 1,
       "num_elementi": 3,
-      "num_elementi_privati": 1,
       "lat": 41.8919,
       "lon": 12.4949
     }
-  ]
-}
-```
-### GET /vie
-Recupera l'elenco delle vie con paginazione opzionale.
-
-**Query Parameters:**
-- `page` (int, opzionale): Numero di pagina
-- `size` (int, opzionale): Elementi per pagina, max 100
-- `comune` (int, opzionale): Filtra per ID comune
-
-**Response (senza paginazione):**
-```json
 [
   {
     "id_via": 1,
     "nome": "Via Roma",
     "id_comune": 1
   }
-]
 ```
 
-### GET /comuni
-Recupera l'elenco dei comuni.
-
-**Query Parameters:**
-- `id_ambito` (int, opzionale): Filtra per ID ambito
-- `cod_istat` (string, opzionale): Filtra per codice ISTAT
-
-**Response:**
 ```json
 [
-  {
     "id_comune": 1,
     "descr_comune": "Roma",
-    "descr_provincia": "Roma",
-    "prefisso_utenti": "06",
     "id_ambito": 1,
     "cod_istat": "058091"
   }
