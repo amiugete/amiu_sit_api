@@ -48,3 +48,33 @@ def prepared_statement_bilaterali() -> str:
             cod_percorso, desc_percorso, frequenza
               """
 
+def prepared_statement_percorso_dettaglio() -> str:
+    """Query unificata per il recupero dei percorsi dei bilaterali."""
+    return """
+        select
+            row_number() OVER (order by ap2.num_seq) AS seq,
+            e.id_piazzola, v.nome as via,
+            p2.numero_civico as civ, p2.riferimento, p2.note as note_piazzola,
+            te.nome as tipo_elem, count(distinct e.id_elemento) as num
+        from elem.elementi_aste_percorso eap 
+        join etl.frequenze_ok fo on fo.cod_frequenza = eap.frequenza::int 
+        join elem.elementi e on e.id_elemento = eap.id_elemento 
+        join elem.piazzole p2 on p2.id_piazzola = e.id_piazzola 
+        join elem.aste a on a.id_asta = e.id_asta 
+        join topo.vie v on v.id_via = a.id_via 
+        join elem.tipi_elemento te on te.tipo_elemento = e.tipo_elemento 
+        join elem.aste_percorso ap2  on ap2.id_asta_percorso = eap.id_asta_percorso 
+        where eap.id_asta_percorso in ( 
+            select id_asta_percorso 
+            from elem.aste_percorso ap
+            where id_percorso = :id and id_percorso in (select id_percorso from elem.percorsi where id_categoria_uso=3)
+            -- qui può essere aggiunto un filtro opzionale per il giorno:
+            -- and fo.descrizione_long ilike '%<giorno>%'
+        )
+        group by ap2.num_seq,
+            e.id_piazzola, v.nome, p2.numero_civico, p2.riferimento, p2.note, te.nome
+    """
+
+
+
+

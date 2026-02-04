@@ -2,8 +2,8 @@ from fastapi import APIRouter, Query, Depends, HTTPException, status
 from typing import Any, List, Optional, Union
 from business.permission import get_current_user, verifica_permesso_utente_endpoint
 from config.database import execute_query
-from models.models import  PaginatedResponse,Utenza,Bilaterali_albero,Bilaterali
-from repository.bilaterali_repo import prepared_statement_bilaterali_albero,prepared_statement_bilaterali
+from models.models import  PaginatedResponse, PercorsoDettaglio,Utenza,Bilaterali_albero,Bilaterali
+from repository.bilaterali_repo import prepared_statement_bilaterali_albero,prepared_statement_bilaterali, prepared_statement_percorso_dettaglio
 from repository.vie_repo import prepared_statement_vie, prepared_statement_vie_with_count
 from repository.utenze_repo import prepared_statement_utenze_UD_with_count,prepared_statement_utenze_UND_with_count
 from sqlalchemy import CursorResult
@@ -109,13 +109,30 @@ def elenco_percorsi_bilaterali():
     logger.info("Ricevuta richiesta GET /elenco_percorsi_bilaterali")
 
     query_select = prepared_statement_bilaterali()
-    list_bilaterali = execute_query(query_select, {})
+    list_bilaterali_cursor = execute_query(query_select, {})
 
-    if list_bilaterali is None or list_bilaterali.rowcount == 0:
+    if list_bilaterali_cursor is None or list_bilaterali_cursor.rowcount == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
         return []
     
-    list_bilaterali = [Bilaterali(**row) for row in list_bilaterali.mappings()]
+    list_bilaterali = [Bilaterali(**row) for row in list_bilaterali_cursor.mappings()]
     logger.info(f"Restituiti {len(list_bilaterali)} percorsi bilaterali.")
     return list_bilaterali
+
+@router.get("/dettagli_percorso", response_model=List[PercorsoDettaglio], description="Recupera la lista dei percorsi bilaterali")
+def dettagli_percorso(
+    id: Optional[str] = Query(..., description="ID del percorso per filtrare i percorsi bilaterali")
+):
+    logger.info("Ricevuta richiesta GET /dettagli_percorso")
+    query_select = prepared_statement_percorso_dettaglio()
+    dettaglio_cursor = execute_query(query_select, {"id": id})
+
+    if dettaglio_cursor is None or dettaglio_cursor.rowcount == 0:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+    
+    dettaglio_list = [PercorsoDettaglio(**row) for row in dettaglio_cursor.mappings()]
+    logger.info(f"Restituiti {len(dettaglio_list)} dettagli percorso.")
+
+    return dettaglio_list
 

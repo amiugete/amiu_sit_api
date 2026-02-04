@@ -149,6 +149,16 @@ class Bilaterali(BaseModel):
     desc_percorso: Optional[str]
     frequenza: Optional[str]
 
+class PercorsoDettaglio(BaseModel):
+    seq: Optional[int]
+    id_piazzola: Optional[int]
+    via: Optional[str]
+    civ: Optional[str]
+    riferimento: Optional[str]
+    note_piazzola: Optional[str]
+    tipo_elem: Optional[str]
+    num: Optional[int]
+
 class UserRoles(MyBaseModel):
     id_user: int
     utenze: Optional[bool] = None
