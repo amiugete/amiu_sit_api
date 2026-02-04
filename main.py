@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import logging
 from public_api import router as public_router
-from utenze_api import router as utenze_router
+from idea_api import router as idea_router
 from auth_api import router as auth_router
 
 
@@ -23,4 +23,4 @@ app = FastAPI(title="API AMIU SIT", version="1.0.0", description="API per l'acce
 app.include_router(prefix="/auth",tags=["Servizi di autenticazione"], router=auth_router)
 # Definizione del router per i servizi pubblici (accesso libero)
 app.include_router(prefix="/ws_amiugis", tags=["Servizi ad accesso libero"], router=public_router)
-app.include_router(prefix="/ws_amiugis", router=utenze_router)
+app.include_router(prefix="/ws_amiugis", router=idea_router)

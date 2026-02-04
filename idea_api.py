@@ -2,7 +2,8 @@ from fastapi import APIRouter, Query, Depends, HTTPException, status
 from typing import Any, List, Optional, Union
 from business.permission import get_current_user, verifica_permesso_utente_endpoint
 from config.database import execute_query
-from models.models import  PaginatedResponse, Via,Utenza
+from models.models import  PaginatedResponse,Utenza,Bilaterali_albero,Bilaterali
+from repository.bilaterali_repo import prepared_statement_bilaterali_albero,prepared_statement_bilaterali
 from repository.vie_repo import prepared_statement_vie, prepared_statement_vie_with_count
 from repository.utenze_repo import prepared_statement_utenze_UD_with_count,prepared_statement_utenze_UND_with_count
 from sqlalchemy import CursorResult
@@ -24,7 +25,7 @@ logging.basicConfig(
 logging.getLogger("watchfiles.main").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["Servizi Utenze"])
+router = APIRouter(tags=["Servizi IDEA"])
 
 @router.get("/utenze_tari", response_model= PaginatedResponse[Utenza],description="Recupera la lista delle utenze tari con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request", )
 def lista_utenze(
@@ -87,5 +88,34 @@ def lista_utenze(
 
     return result
 
+@router.get("/elenco_percorsi_bilaterali_tree", response_model=List[Bilaterali_albero], description="Recupera la lista dei percorsi bilaterali ad albero")
+def elenco_percorsi_bilaterali_tree():
+    logger.info("Ricevuta richiesta GET /elenco_percorsi_bilaterali_tree")
 
+    query_select = prepared_statement_bilaterali_albero()
+    list_bilaterali_albero = execute_query(query_select, {})
+
+    if list_bilaterali_albero is None or list_bilaterali_albero.rowcount == 0:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+    
+    list_bilaterali_albero = [Bilaterali_albero(**row) for row in list_bilaterali_albero.mappings()]
+    logger.info(f"Restituiti {len(list_bilaterali_albero)} percorsi bilaterali ad albero.")
+    return list_bilaterali_albero
+
+
+@router.get("/elenco_percorsi_bilaterali", response_model=List[Bilaterali], description="Recupera la lista dei percorsi bilaterali")
+def elenco_percorsi_bilaterali():
+    logger.info("Ricevuta richiesta GET /elenco_percorsi_bilaterali")
+
+    query_select = prepared_statement_bilaterali()
+    list_bilaterali = execute_query(query_select, {})
+
+    if list_bilaterali is None or list_bilaterali.rowcount == 0:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+    
+    list_bilaterali = [Bilaterali(**row) for row in list_bilaterali.mappings()]
+    logger.info(f"Restituiti {len(list_bilaterali)} percorsi bilaterali.")
+    return list_bilaterali
 

@@ -132,6 +132,23 @@ class Utenza(MyBaseModel):
     totale_record: Optional[int] = None
 
 
+class Bilaterali_albero(MyBaseModel):
+    id_area: Optional[int] = None
+    descrizione : Optional[str] = None
+    id_padre:Optional[int] = None
+
+
+class Bilaterali(BaseModel):
+    id_padre: Optional[int]
+    ut_responsabile: Optional[str]
+    id_tipo_rifiuto: Optional[int]
+    tipi_rifiuto: Optional[str]
+    desc_turno: Optional[str]
+    id_percorso: Optional[str]
+    cod_percorso: Optional[str]
+    desc_percorso: Optional[str]
+    frequenza: Optional[str]
+
 class UserRoles(MyBaseModel):
     id_user: int
     utenze: Optional[bool] = None
