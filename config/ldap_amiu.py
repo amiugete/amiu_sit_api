@@ -22,15 +22,15 @@ def verifica_utente_amiu_LDAP(username, password)-> tuple[bool, str]:
 
         # Eseguiamo il bind (login)
         if conn.bind():
-            msg = f"✅ Autenticazione riuscita per {username}"
+            msg = f"Autenticazione riuscita per {username}"
             logger.info(msg)
             conn.unbind()
             return True, msg
         else:
-            msg =f"❌ Credenziali errate per {username}"
+            msg =f"Credenziali errate per {username}"
             logger.warning(msg)
             return False, msg
 
     except Exception as e:
-        logger.error(f"⚠️ Errore critico: {e}")
+        logger.error(f"Errore critico: {e}")
         return False, "Errore critico durante l'autenticazione LDAP"

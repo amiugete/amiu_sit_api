@@ -4,9 +4,6 @@ from logging import log
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import Optional, Any, TypeVar, Generic
 from datetime import datetime
-from fastapi.security import OAuth2PasswordRequestForm
-
-import re
 
 T = TypeVar('T')
 
@@ -44,13 +41,14 @@ class Piazzola(MyBaseModel):
     num_elementi_privati: int
     lat: float
     lon: float
+    total_count: Optional[int] = None
 
 
 class Via(MyBaseModel):
     id_via: int
     nome: str
     id_comune: int
-
+    total_count: Optional[int] = None
 
 class Comune(MyBaseModel):
     id_comune: int
@@ -76,6 +74,7 @@ class Civico(MyBaseModel):
     lon: float
     insert_date: Optional[datetime] = None
     update_date: Optional[datetime] = None
+    total_count: Optional[int] = None
 
 
 class Quartiere(MyBaseModel):
@@ -105,6 +104,48 @@ class User(MyBaseModel):
     id_user: int
     name: str
     email: Optional[str] = None
+
+class Mappa(MyBaseModel):
+    titolo: str
+    descrizione: str
+
+class Utenza(MyBaseModel):
+    id_utenza: str
+    codice_immobile: Optional[int] = None
+    cod_interno: Optional[str] = None
+    cod_civico: Optional[str] = None
+    tipo_utenza: Optional[str] = None
+    categoria: Optional[int] = None
+    nominativo: Optional[str] = None
+    cfisc_pariva: Optional[str] = None
+    cod_via: Optional[int] = None
+    descr_via: Optional[str] = None
+    civico: Optional[int] = None
+    lettera_civico: Optional[str] = None
+    colore_civico: Optional[str] = None
+    scala: Optional[str] = None
+    interno: Optional[str] = None
+    lettera_interno: Optional[str] = None
+    zona_municipio: Optional[str] = None
+    subzona_quartiere: Optional[str] = None
+    data_cessazione: Optional[datetime] = None
+    totale_record: Optional[int] = None
+
+
+class UserRoles(MyBaseModel):
+    id_user: int
+    utenze: Optional[bool] = None
+    amministratore: Optional[bool] = None
+
+    def get_active_roles(self) -> list[str]:
+        """Restituisce una lista dei ruoli attivi per l'utente."""
+        roles = []
+        for field in type(self).model_fields.keys():
+            if field != "id_user":
+                value = getattr(self, field, None)
+                if value:
+                    roles.append(field)
+        return roles
 
 
 

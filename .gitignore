@@ -13,4 +13,5 @@ build/
 ./p
 .env
 app.log
+.vscode/
 
