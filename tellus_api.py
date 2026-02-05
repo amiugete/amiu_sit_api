@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Query
 from typing import Any, List, Optional, Union
 from config.database import execute_query
-from models.models import  ElementoAmiu, PaginatedResponse, PiazzolaAmiu, PosterioriPercorso
+from models.models import  ElementoAmiu, ItinerarioPercorsoPsteriore, PaginatedResponse, PiazzolaAmiu, PosterioriPercorso
 from repository.elementi_amiu_repo import prepared_statement_elementi_amiu
 from repository.elementi_amiu_repo import prepared_statement_elementi_amiu
+from repository.itinerari_percorsi_posteriori import prepared_statement_percorsi_posteriori_aggiornata
 from repository.piazzole_amiu_repo import prepared_statement_piazzole_amiu
 from repository.posteriori_repo import prepared_statement_posteriori_with_count
 from sqlalchemy import CursorResult
@@ -150,5 +151,49 @@ def lista_elementi_p(
         return result
     
     return lista_elementi
+
+
+@router.get(
+    "/itinerari_p",
+    response_model=Union[List[ItinerarioPercorsoPsteriore], PaginatedResponse[ItinerarioPercorsoPsteriore]],
+    description="Restituisce la lista degli itinerari dei percorsi dei posteriori amiu. Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD)."
+)
+def lista_itinerari_p(
+    page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
+    size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
+    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$")
+):
+    logger.info("Ricevuta richiesta GET /itinerari_p")
+    itinerari_row: CursorResult[Any]
+    query_select = ''
+    offset = 0
+    limit = 1000
+
+    if page is not None and size is not None and size > 0 and page > 0:
+        offset = (page - 1) * size
+        limit = size
+
+
+    query_select = prepared_statement_percorsi_posteriori_aggiornata()
+    itinerari_row = execute_query(query_select, {"last_update": last_update,"limit": limit, "offset": offset})
+
+    if itinerari_row is None:
+            logger.info("Nessun risultato ottenuto dalla query.")
+            return []
+
+    ## Creazione della lista degli itinerari amiu
+    lista_itinerari = [ItinerarioPercorsoPsteriore(**row) for row in itinerari_row.mappings()]
+
+
+    if page is not None and size is not None and size > 0 and page > 0:
+        result = PaginatedResponse[ItinerarioPercorsoPsteriore]()
+        result.total = lista_itinerari[0].total_count
+        result.content = lista_itinerari
+        result.page = page
+        result.size = size
+        result.pages = (result.total + size - 1) // size if size else 0
+        return result
+    
+    return lista_itinerari
 
 

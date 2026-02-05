@@ -201,6 +201,19 @@ class ElementoAmiu(MyBaseModel):
     data_ultima_modifica: Optional[str] = None
     total_count: Optional[int] = None
 
+class ItinerarioPercorsoPsteriore(BaseModel):
+        cod_percorso: Optional[str] = None
+        ordine: Optional[int] = None
+        id_elemento: Optional[int] = None
+        id_frequenza: Optional[int] = None
+        descrizione_long: Optional[str] = None
+        data_inizio: Optional[str] = None
+        data_fine: Optional[str] = None
+        id_asta_percorso: Optional[int] = None
+        ripasso: Optional[int] = None
+        periodicita: Optional[str] = None
+        data_ultima_modifica: Optional[str] = None
+        total_count: Optional[int] = None
 
 class PercorsoDettaglio(BaseModel):
     seq: Optional[int]
