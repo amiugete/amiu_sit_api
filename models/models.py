@@ -1,6 +1,5 @@
-# models.py
 
-from logging import log
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import Optional, Any, TypeVar, Generic
 from datetime import datetime
@@ -83,6 +82,11 @@ class Quartiere(MyBaseModel):
     id_comune: int
     descrizione: str
 
+class Municipio(BaseModel):
+    id_municipio: int
+    id_comune: int
+    descrizione: str
+
 
 class Ambito(MyBaseModel):
     id_ambito: int
@@ -97,7 +101,7 @@ class PointOfInterest(MyBaseModel):
     note: Optional[str] = None
     lat: float
     lon: float
-    tipo: str    
+    tipo: str 
 
 
 class User(MyBaseModel):
@@ -148,6 +152,55 @@ class Bilaterali(BaseModel):
     cod_percorso: Optional[str]
     desc_percorso: Optional[str]
     frequenza: Optional[str]
+
+class PosterioriPercorso(BaseModel):
+    cod_percorso: Optional[str] = None
+    descrizione: Optional[str] = None
+    servizio: Optional[str] = None
+    id_ut: Optional[int] = None
+    ut_rimessa: Optional[str] = None
+    freq_testata: Optional[int] = None
+    freq: Optional[str] = None
+    id_turno: Optional[int] = None
+    turno: Optional[str] = None
+    codice_cer: Optional[str] = None
+    data_inizio_validita: Optional[str] = None
+    data_fine_validita: Optional[str] = None
+    data_ultima_modifica: Optional[str] = None
+    versione_testata: Optional[int] = None
+    periodicita: Optional[str] = None
+    doppia_antenna: Optional[int] = None
+    total_count: Optional[int] = None
+
+class PiazzolaAmiu(BaseModel):
+    id_piazzola: Optional[int] = None
+    via: Optional[str] = None
+    numero_civico: Optional[int] = None
+    riferimento: Optional[str] = None
+    note: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    data_inserimento: Optional[str] = None
+    data_eliminazione: Optional[str] = None
+    data_ultima_modifica: Optional[str] = None
+    total_count: Optional[int] = None
+
+class ElementoAmiu(MyBaseModel):
+    id_elemento: int
+    id_piazzola: Optional[int]
+    id_tipo_elemento: Optional[int]
+    tipo_elemento: Optional[str]
+    rifiuto: Optional[str]
+    volume_litri: Optional[float]
+    matricola: Optional[str]
+    tag: Optional[str]
+    serratura: Optional[int]
+    matricola_serratura: Optional[str]
+    data_inserimento: Optional[str]
+    data_eliminazione: Optional[str] = None
+    data_ultima_modifica: Optional[str] = None
+    total_count: Optional[int] = None
+
 
 class PercorsoDettaglio(BaseModel):
     seq: Optional[int]

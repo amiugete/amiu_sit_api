@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Query
 from typing import Any, List, Optional, Union
 from config.database import execute_query
-from models.models import Mappa, Piazzola, PaginatedResponse, Via, Comune, Civico, Quartiere, Ambito, PointOfInterest
+from models.models import Mappa, Municipio, Piazzola, PaginatedResponse, Via, Comune, Civico, Quartiere, Ambito, PointOfInterest
+from repository.municipi_repo import prepared_statement_municipi_genova
 from repository.vie_repo import prepared_statement_vie, prepared_statement_vie_with_count
 from repository.piazzole_repo import prepared_statement_piazzole, prepared_statement_piazzole_with_count
 from repository.comuni_repo import prepared_statement_comuni
@@ -243,6 +244,18 @@ def lista_ambiti():
     listAmbiti = [Ambito(**row) for row in listAmbiti.mappings()]
     logger.info(f"Restituiti {len(listAmbiti)} ambiti.")
     return listAmbiti
+
+@router.get("/municipi", response_model=List[Municipio], description="Recupera la lista dei municipi")
+def lista_municipi():
+    logger.info("Ricevuta richiesta GET /municipi")
+    query_select = prepared_statement_municipi_genova()
+    municipi_row = execute_query(query_select, {})
+    if municipi_row is None:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+    municipi_list = [Municipio(**row) for row in municipi_row.mappings()]
+    logger.info(f"Restituiti {len(municipi_list)} municipi.")
+    return municipi_list
 
 
 @router.get("/pointofinterest", response_model=List[PointOfInterest], description="Recupera i dettagli dei Punti di Interesse (Rimesse, UT e Scarichi vari)")
