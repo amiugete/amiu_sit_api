@@ -4,6 +4,7 @@ from public_api import router as public_router
 from idea_api import router as idea_router
 from auth_api import router as auth_router
 from tellus_api import router as tellus_router
+from localizzazione_api import router as localizzazione_router
 
 
 logging.basicConfig(
@@ -26,3 +27,4 @@ app.include_router(prefix="/auth",tags=["Servizi di autenticazione"], router=aut
 app.include_router(prefix="/ws_amiugis", tags=["Servizi ad accesso libero"], router=public_router)
 app.include_router(prefix="/ws_amiugis", router=idea_router)
 app.include_router(prefix="/ws_amiugis", router=tellus_router)
+app.include_router(prefix="/ws_amiugis", router=localizzazione_router)

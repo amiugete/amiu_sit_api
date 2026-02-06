@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Query
 from typing import Any, List, Optional, Union
 from config.database import execute_query
-from models.models import  ElementoAmiu, ItinerarioPercorsoPsteriore, PaginatedResponse, PiazzolaAmiu, PosterioriPercorso
-from repository.elementi_amiu_repo import prepared_statement_elementi_amiu
+from models.models import  Deposito, ElementoAmiu, ItinerarioPercorsoPsteriore, PaginatedResponse, PiazzolaAmiu, PosterioriPercorso
+from repository.depositi_repo import prepared_statement_depositi
 from repository.elementi_amiu_repo import prepared_statement_elementi_amiu
 from repository.itinerari_percorsi_posteriori import prepared_statement_percorsi_posteriori_aggiornata
 from repository.piazzole_amiu_repo import prepared_statement_piazzole_amiu
@@ -184,7 +184,6 @@ def lista_itinerari_p(
     ## Creazione della lista degli itinerari amiu
     lista_itinerari = [ItinerarioPercorsoPsteriore(**row) for row in itinerari_row.mappings()]
 
-
     if page is not None and size is not None and size > 0 and page > 0:
         result = PaginatedResponse[ItinerarioPercorsoPsteriore]()
         result.total = lista_itinerari[0].total_count
@@ -194,6 +193,48 @@ def lista_itinerari_p(
         result.pages = (result.total + size - 1) // size if size else 0
         return result
     
+
     return lista_itinerari
 
+
+@router.get(
+    "/depositi",
+    response_model=Union[List[Deposito], PaginatedResponse[Deposito]],
+    description="Restituisce la lista delle Unità Territoriali e delle Rimesse. Supporta la paginazione e il filtro per data di ultimo aggiornamento."
+)
+def lista_depositi(
+    page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
+    size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
+    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD", pattern=r"^\d{8}$")
+):
+    logger.info("Ricevuta richiesta GET /depositi")
+    offset = 0
+    limit = 1000
+
+    if page is not None and size is not None and size > 0 and page > 0:
+        offset = (page - 1) * size
+        limit = size
+
+    query_select = prepared_statement_depositi()
+    depositi_rows = execute_query(query_select, {"last_update": last_update, "limit": limit, "offset": offset})
+
+    if depositi_rows is None:
+        logger.info("Nessun risultato ottenuto dalla query per /depositi.")
+        return []
+
+    lista_depositi_res = [Deposito(**row) for row in depositi_rows.mappings()]
+
+    if not lista_depositi_res:
+        return []
+
+    if page is not None and size is not None and size > 0 and page > 0:
+        result = PaginatedResponse[Deposito]()
+        result.total = lista_depositi_res[0].total_count
+        result.content = lista_depositi_res
+        result.page = page
+        result.size = size
+        result.pages = (result.total + size - 1) // size if size else 0
+        return result
+    
+    return lista_depositi_res
 

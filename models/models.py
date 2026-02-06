@@ -215,6 +215,33 @@ class ItinerarioPercorsoPsteriore(BaseModel):
         data_ultima_modifica: Optional[str] = None
         total_count: Optional[int] = None
 
+class Deposito(MyBaseModel):
+    id_ut: int
+    descrizione: str
+    long: float
+    lat: float
+    raggio: int
+    data_inizio: str
+    data_fine: Optional[str] = None
+    data_ultima_modifica: str
+    total_count: Optional[int] = None
+
+
+class Point2Area(MyBaseModel):
+    id_ambito: int
+    ambito: str
+    id_comune: int
+    comune: str
+    id_zona: int
+    zona: str
+    id_ut: int
+    ut: str
+    id_municicio: Optional[str] = None
+    municipio: Optional[str] = None
+    id_quartiere: Optional[int] = None
+    quartiere: Optional[str] = None
+
+
 class PercorsoDettaglio(BaseModel):
     seq: Optional[int]
     id_piazzola: Optional[int]
@@ -239,6 +266,18 @@ class UserRoles(MyBaseModel):
                 if value:
                     roles.append(field)
         return roles
+
+
+class LayerFilterResponse(MyBaseModel):
+    url: str
+    repository: str
+    project: str
+    bbox: str
+    crs: str
+    filter: str
+
+
+
 
 
 

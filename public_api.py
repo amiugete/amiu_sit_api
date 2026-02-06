@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
 from typing import Any, List, Optional, Union
+from enum import Enum
 from config.database import execute_query
-from models.models import Mappa, Municipio, Piazzola, PaginatedResponse, Via, Comune, Civico, Quartiere, Ambito, PointOfInterest
+from models.models import LayerFilterResponse, Mappa, Municipio, Piazzola, PaginatedResponse, Via, Comune, Civico, Quartiere, Ambito, PointOfInterest
+from repository.layer_filter_repo import get_layer_filter_query
 from repository.municipi_repo import prepared_statement_municipi_genova
 from repository.vie_repo import prepared_statement_vie, prepared_statement_vie_with_count
 from repository.piazzole_repo import prepared_statement_piazzole, prepared_statement_piazzole_with_count
@@ -40,7 +42,42 @@ def mappe():
     listaMappe = [Mappa(**row) for row in listaMappe.mappings()]
     logger.info(f"Restituite {len(listaMappe)} mappe.")
     return listaMappe
+class LivelloFiltro(str, Enum):
+    ambito = "ambito"
+    comune = "comune"
+    municipio = "municipio"
 
+@router.get(
+    "/layer_filter",
+    response_model=List[LayerFilterResponse],
+    description="Recupera i layer filtrati in base a titolo mappa, livello e nome."
+)
+def get_layer_filter(
+    t: str = Query(..., description="Titolo della mappa"),
+    l: LivelloFiltro = Query(..., description="Livello del filtro"),
+    n: str = Query(..., description="Nome da usare nel filtro")
+):
+    logger.info(f"Ricevuta richiesta GET /layer_filter con t={t}, l={l.value}, n={n}")
+    
+    try:
+        query = get_layer_filter_query(level=l.value)
+    except ValueError as e:
+        # Questo errore viene sollevato dalla funzione del repository se il livello è invalido
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # In linea con il codice PHP, non aggiungo wildcard. L'utente deve fornirli se necessario.
+    params = {"title": t, "name": n}
+
+    layer_rows = execute_query(query, params)
+    
+    if layer_rows is None:
+        logger.info(f"Nessun risultato ottenuto dalla query per /layer_filter con parametri t={t}, l={l.value}, n={n}")
+        return []
+
+    result_list = [LayerFilterResponse(**row) for row in layer_rows.mappings()]
+
+    logger.info(f"Restituiti {len(result_list)} risultati per il filtro layer.")
+    return result_list
 
 @router.get("/piazzole", response_model=Union[List[Piazzola],PaginatedResponse[Piazzola]],description="Recupera la lista delle piazzole con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request", )
 def lista_piazzole(
@@ -269,6 +306,7 @@ def lista_point_of_interest():
     listPointOfInterest = [PointOfInterest(**row) for row in listPointOfInterest.mappings()]
     logger.info(f"Restituiti {len(listPointOfInterest)} point of interest.")
     return listPointOfInterest
+
 
 
 
