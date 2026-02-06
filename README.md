@@ -1,26 +1,26 @@
 # AMIU SIT API
 
-API REST per la gestione dei dati geografici e amministrativi del sistema informativo AMIU (Azienda Mobilità e Igiene Urbana). L'applicazione fornisce accesso ai dati su piazzole e vie con supporto per paginazione e filtri avanzati.
+API REST per la gestione dei dati geografici e amministrativi del sistema informativo AMIU (Azienda Mobilità e Igiene Urbana). L'applicazione fornisce accesso a dati su piazzole, vie, utenze, percorsi e altro, con supporto per paginazione, filtri avanzati e autenticazione.
 
 ## 📋 Descrizione
 
-AMIU SIT API è un'applicazione FastAPI che espone endpoint per consultare:
-- **Piazzole**: Punti di raccolta rifiuti con informazioni geografiche e amministrative
-- **Vie**: Strade e percorsi del territorio servito
-- **Comuni**: Comuni del territorio
-- **Civici**: Indirizzi e numeri civici
-- **Quartieri**: Suddivisioni territoriali per municipio
-- **Ambiti**: Raggruppamenti amministrativi
+AMIU SIT API è un'applicazione FastAPI che espone una serie di endpoint per consultare:
+- **Dati Geografici Pubblici**: Vie, piazze, comuni, municipi, quartieri, ambiti.
+- **Dati Operativi TELLUS**: Percorsi, piazzole, elementi e itinerari specifici.
+- **Dati Protetti IDEA**: Utenze TARI e percorsi bilaterali (richiede autenticazione).
+- **Servizi di Localizzazione**: Endpoint per risolvere coordinate geografiche in aree amministrative.
+- **Autenticazione**: Sistema basato su token JWT per l'accesso alle risorse protette.
 
 L'API supporta:
-- ✅ Paginazione personalizzabile per piazzole e civici
-- ✅ Filtri avanzati per comune, municipio, via e PAP
-- ✅ Risposte in formato JSON
-- ✅ Logging dettagliato
-- ✅ Connessione sicura a PostgreSQL
-- ✅ Endpoint senza paginazione per dati di lookup (comuni, quartieri, ambiti)
+- ✅ Autenticazione sicura tramite JWT.
+- ✅ Paginazione personalizzabile sulla maggior parte degli endpoint di lista.
+- ✅ Filtri avanzati su molteplici parametri.
+- ✅ Risposte in formato JSON standard.
+- ✅ Logging dettagliato su file (`app.log`) e console.
+- ✅ Connessione sicura a PostgreSQL.
+- ✅ Documentazione interattiva tramite Swagger UI.
 
-## 🚀 Installazione
+## 🚀 Installazione e Configurazione
 
 ### Prerequisiti
 - Python 3.8+
@@ -30,283 +30,171 @@ L'API supporta:
 ### Setup
 
 1. **Clone il repository**
-```bash
-git clone <repository-url>
-cd amiu_sit_api
-```
+   ```bash
+   git clone <repository-url>
+   cd amiu_sit_api
+   ```
 
 2. **Crea un ambiente virtuale**
-```bash
-python -m venv venv
-source venv/bin/activate  # Su Windows: venv\Scripts\activate
-```
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # Su Windows: venv\Scripts\activate
+   ```
 
 3. **Installa le dipendenze**
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 4. **Configura le variabili di ambiente**
 
-Crea un file `.env` nella root del progetto:
-```env
-DB_USER=??
-DB_PASSWORD=??
-DB_HOST=??
-DB_PORT=??
-DB_NAME=??
-```
+   Crea un file `.env` nella root del progetto e inserisci le seguenti variabili.
+
+   **Database:**
+   ```env
+   DB_USER=postgres
+   DB_PASSWORD=your_db_password
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=amiu
+   ```
+
+   **Autenticazione JWT:**
+   Aggiungi queste variabili al tuo file `.env` per configurare la generazione dei token.
+   ```env
+   SECRET_KEY=la_tua_chiave_segreta_super_difficile
+   ACCESS_TOKEN_EXPIRE_MINUTES=30
+   ```
+   - `SECRET_KEY`: Una stringa lunga e casuale usata per firmare i token.
+   - `ALGORITHM`: L'algoritmo di hashing (es. HS256).
+   - `ACCESS_TOKEN_EXPIRE_MINUTES`: La durata di validità del token in minuti.
 
 5. **Avvia il server in sviluppo**
-```bash
-fastapi dev main.py
-```
+   ```bash
+   fastapi dev main.py
+   ```
 
-L'API sarà disponibile su `http://localhost:8000`
-
+L'API sarà disponibile su `http://localhost:8000` e la documentazione interattiva su `http://localhost:8000/docs`.
 
 ## 📚 API Endpoints
 
-### GET /piazzole
-Recupera l'elenco delle piazzole con paginazione opzionale.
+### Servizi di Autenticazione (`/auth`)
 
-**Query Parameters:**
-- `page` (int, opzionale): Numero di pagina (default: nessuna paginazione)
-- `size` (int, opzionale): Elementi per pagina, max 100
-- `comune` (int, opzionale): Filtra per ID comune
-- `municipio` (int, opzionale): Filtra per ID municipio
-- `via` (int, opzionale): Filtra per ID via
-- `pap` (int, opzionale): Filtra per PAP (0=No, 1=Sì)
+#### `POST /token`
+Genera un token JWT per autenticare un utente tramite credenziali LDAP.
+- **Request Body**: `application/x-www-form-urlencoded` con `username` e `password`.
+- **Autorizzazione**: Nessuna.
 
-**Response (con paginazione):**
-```json
-{
-  "total": 1500,
-  "page": 1,
-  "size": 50,
-  "pages": 30,
-  "content": [
-    {
-      "id_piazzola": 1,
-      "id_via": 10,
-      "via": "Via Roma",
-      "comune": "Roma",
-      "municipio": "Municipio I",
-      "quartiere": "Centro",
-      "numero_civico": "42",
-      "riferimento": "Presso chiesa",
-      "note": "Accesso da retro",
-      "elementi": "Carta,Vetro,Plastica",
-      "pap": 1,
-      "num_elementi": 3,
-      "lat": 41.8919,
-      "lon": 12.4949
-    }
-[
-  {
-    "id_via": 1,
-    "nome": "Via Roma",
-    "id_comune": 1
-  }
-```
+---
 
-```json
-[
-    "id_comune": 1,
-    "descr_comune": "Roma",
-    "id_ambito": 1,
-    "cod_istat": "058091"
-  }
-]
-```
+### Servizi Pubblici (`/ws_amiugis`)
+Questi endpoint sono ad accesso libero e non richiedono autenticazione.
 
-### GET /civici
-Recupera l'elenco dei civici con paginazione opzionale.
+#### `GET /mappe`
+Recupera le mappe disponibili.
 
-**Query Parameters:**
-- `page` (int, opzionale): Numero di pagina
-- `size` (int, opzionale): Elementi per pagina, max 100
-- `id_municipio` (int, opzionale): Filtra per municipio
-- `id_via` (int, opzionale): Filtra per ID via
+#### `GET /piazzole`
+Recupera la lista delle piazzole con filtri e paginazione.
+- **Parametri**: `page`, `size`, `comune`, `municipio`, `via`, `pap`.
 
-**Response:**
-```json
-{
-  "total": 5000,
-  "pages": 100,
-  "content": [
-    {
-      "numero": 42,
-      "lettera": "A",
-      "colore": "rosso",
-      "testo": "42A",
-      "cod_strada": "STR001",
-      "nome_via": "Via Roma",
-      "id_comune": 1,
-      "id_municipio": 1,
-      "id_quartiere": 5,
-      "lat": 41.8919,
-      "lon": 12.4949,
-      "insert_date": "2024-01-15T10:30:00",
-      "update_date": "2024-01-20T14:22:00"
-    }
-  ]
-}
-```
+#### `GET /vie`
+Recupera la lista delle vie con filtri e paginazione.
+- **Parametri**: `page`, `size`, `comune`.
 
-### GET /quartieri
-Recupera l'elenco dei quartieri.
+#### `GET /comuni`
+Recupera la lista dei comuni.
+- **Parametri**: `id_ambito`, `cod_istat`.
 
-**Query Parameters:**
-- `id_municipio` (int, opzionale): Filtra per ID municipio
+#### `GET /civici`
+Recupera la lista dei civici con filtri e paginazione.
+- **Parametri**: `page`, `size`, `id_municipio`, `id_via`.
 
-**Response:**
-```json
-[
-  {
-    "id_quartiere": 1,
-    "id_municipio": 1,
-    "id_comune": 1,
-    "descrizione": "Quartiere Centro"
-  }
-]
-```
+#### `GET /quartieri`
+Recupera la lista dei quartieri.
+- **Parametri**: `id_municipio`.
 
-### GET /ambiti
-Recupera l'elenco degli ambiti.
+#### `GET /ambiti`
+Recupera la lista degli ambiti.
 
-**Query Parameters:** nessuno
+#### `GET /municipi`
+Recupera la lista dei municipi di Genova.
 
-**Response:**
-```json
-[
-  {
-    "id_ambito": 1,
-    "descr_ambito": "Ambito Centro"
-  }
-] ]
-}
-```
+#### `GET /pointofinterest`
+Recupera i dettagli dei Punti di Interesse (Rimesse, UT e Scarichi vari).
 
-### POST /token
-Genera un token JWT per autenticare l'utente tramite credenziali LDAP.
+#### `GET /layer_filter`
+Recupera i layer filtrati in base a titolo mappa, livello e nome.
+- **Parametri**: `t` (titolo), `l` ('ambito', 'comune', 'municipio'), `n` (nome).
 
-**Request Body:**
-- `username` (string): Nome utente per l'autenticazione
-- `password` (string): Password associata all'utente
+---
 
-**Response:**
-```json
-{
-  "access_token": "<jwt_token>",
-  "token_type": "bearer"
-}
-```
+### Servizi di Localizzazione (`/ws_amiugis`)
 
-**Errori Possibili:**
-- **401 Unauthorized**: Credenziali non valide o utente non trovato
+#### `GET /point2area`
+Restituisce le informazioni sull'area (comune, municipio, quartiere, etc.) a partire da coordinate geografiche.
+- **Parametri**: `lat` (latitudine), `lon` (longitudine).
+- **Autorizzazione**: Nessuna.
 
-## 📁 Struttura del Progetto
+---
 
-```
-amiu_sit_api/
-├── main.py                      # Applicazione principale FastAPI
-├── requirements.txt             # Dipendenze Python
-├── README.md                    # Questo file
-├── app.log                      # Log dell'applicazione
-├── .env                         # Variabili di ambiente (non committare)
-├── config/
-│   ├── database.py             # Configurazione e connessione DB
-│   └── __pycache__/
-├── models/
-│   ├── models.py               # Definizione modelli Pydantic
-│   └── __pycache__/
-└── repository/
-    ├── piazzole_repo.py        # Query per piazzole
-    ├── vie_repo.py             # Query per vie
-    └── __pycache__/
-```
+### Servizi TELLUS (`/ws_amiugis`)
+Questi endpoint forniscono dati operativi dal sistema TELLUS e non richiedono autenticazione.
 
-## 🏗️ Architettura
+#### `GET /percorsi_p`
+Restituisce la lista dei percorsi posteriori con paginazione e filtro data.
+- **Parametri**: `page`, `size`, `last_update`.
 
-### Modelli (models.py)
-- **MyBaseModel**: Classe base con configurazione Pydantic
-- **PaginatedResponse[T]**: Risposta generica paginata con total, page, size, pages, content
-- **Piazzola**: Modello per i dati delle piazzole
-- **Percorso/Via**: Modello per i dati delle vie
+#### `GET /piazzole_amiu`
+Restituisce la lista delle piazzole AMIU con paginazione e filtro data.
+- **Parametri**: `page`, `size`, `last_update`.
 
-### Database (config/database.py)
-- Connessione PostgreSQL tramite SQLAlchemy
-- `execute_query()`: Funzione utility per eseguire query raw SQL
-- Support per parametrizzazione delle query
+#### `GET /elementi_p`
+Restituisce la lista degli elementi con paginazione e filtro data.
+- **Parametri**: `page`, `size`, `last_update`.
 
-### Repository (repository/)
-- Contiene le query SQL preparate
-- Funzioni dedicate per count e select
-- Supporto per filtri dinamici
+#### `GET /itinerari_p`
+Restituisce la lista degli itinerari dei percorsi posteriori con paginazione e filtro data.
+- **Parametri**: `page`, `size`, `last_update`.
 
-## 🔧 Configurazione
+#### `GET /depositi`
+Restituisce la lista di Unità Territoriali e Rimesse con paginazione e filtro data.
+- **Parametri**: `page`, `size`, `last_update`.
 
-### Variabili di Ambiente
-Tutte le configurazioni vengono caricate da `.env`:
+---
 
-| Variabile | Descrizione |
-|-----------|------------|
-| `DB_USER` | Utente PostgreSQL |
-| `DB_PASSWORD` | Password PostgreSQL |
-| `DB_HOST` | Host del server PostgreSQL |
-| `DB_PORT` | Porta PostgreSQL (default: 5432) |
-| `DB_NAME` | Nome del database |
+### Servizi IDEA (`/ws_amiugis`)
+Questi endpoint richiedono un token di autenticazione Bearer.
 
-### Logging
-L'applicazione genera log in due destinazioni:
-- **File**: `app.log` - Salva tutti i log
-- **Console**: Output in tempo reale
+#### `GET /utenze_tari`
+Recupera la lista delle utenze TARI (Domestiche o Non Domestiche) con paginazione.
+- **Parametri**: `tipo` ('UD' o 'UND'), `page`, `size`.
+- **Autorizzazione**: Richiesto token JWT.
 
-Livello di log: INFO
+#### `GET /elenco_percorsi_bilaterali_tree`
+Recupera la lista dei percorsi bilaterali strutturata ad albero.
+- **Autorizzazione**: Nessuna (potrebbe essere un errore, da verificare).
 
-## 📊 Esempi di Utilizzo
+#### `GET /elenco_percorsi_bilaterali`
+Recupera la lista flat dei percorsi bilaterali.
+- **Autorizzazione**: Nessuna (potrebbe essere un errore, da verificare).
 
-### Recuperare tutte le piazzole di una via
-```bash
-curl "http://localhost:8000/piazzole?via=10"
-```
-
-### Recuperare piazzole con paginazione
-```bash
-curl "http://localhost:8000/piazzole?page=1&size=50&comune=1"
-```
-
-### Filtrare per PAP e municipio
-```bash
-curl "http://localhost:8000/piazzole?pap=1&municipio=1"
-```
-
-### Recuperare le vie di un comune
-```bash
-curl "http://localhost:8000/vie?page=1&size=100&comune=1"
-```
+#### `GET /dettagli_percorso`
+Recupera i dettagli di uno specifico percorso bilaterale.
+- **Parametri**: `id` del percorso.
+- **Autorizzazione**: Nessuna (potrebbe essere un errore, da verificare).
 
 ## 🐛 Gestione Errori
 
 L'applicazione ritorna:
-- **200 OK**: Richiesta riuscita
-- **404 Not Found**: Endpoint non trovato
-- **422 Unprocessable Entity**: Parametri non validi
-- **500 Internal Server Error**: Errore del server (controllare i log)
+- **200 OK**: Richiesta riuscita.
+- **400 Bad Request**: Parametri non validi (es. `livello` errato per `/layer_filter`).
+- **401 Unauthorized**: Token mancante, invalido o scaduto.
+- **403 Forbidden**: L'utente non ha i permessi per accedere alla risorsa.
+- **404 Not Found**: Risorsa o endpoint non trovato.
+- **422 Unprocessable Entity**: Dati della richiesta non validi o mancanti.
+- **500 Internal Server Error**: Errore generico del server (controllare i log).
 
 Tutti gli errori sono loggati in `app.log`.
-
-## 💡 Sviluppo
-
-### Aggiungere un nuovo endpoint
-1. Creare la query in `repository/`
-2. Definire il modello in `models/models.py`
-3. Aggiungere la rotta in `main.py`
-4. Testare con curl o Swagger
-
-### Documentazione Interattiva
-Swagger UI disponibile a: `http://localhost:8000/docs`
 
 ## 📝 Licenza
 
