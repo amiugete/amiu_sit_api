@@ -34,7 +34,7 @@ logging.getLogger("watchfiles.main").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 # Inizializza l'app FastAPI
-app = FastAPI(title="API AMIU SIT", version="1.0.0", description="API per l'accesso ai dati geografici di AMIU")
+app = FastAPI(title="API AMIU SIT", version="1.0.0", description="API per l'accesso ai dati geografici di AMIU",root_path="/api")
 
 # Definizione del router per l'autenticazione (accesso libero)
 app.include_router(prefix="/auth", tags=["Servizi di autenticazione"], router=auth_router)
