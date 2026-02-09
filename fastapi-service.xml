@@ -1,0 +1,19 @@
+<service>
+  <id>fastapi-service</id>
+  <name>FastAPI Service</name>
+  <description>Servizio FastAPI con WinSW</description>
+  <executable>.venv\Scripts\python.exe</executable>
+  <arguments>-m uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4</arguments>
+  <workingdirectory>.</workingdirectory>
+  <priority>Normal</priority>
+  <stoptimeout>15 sec</stoptimeout>
+  <stopparentprocessfirst>true</stopparentprocessfirst>
+  <startmode>Manual</startmode>
+  <waithint>15 sec</waithint>
+  <sleeptime>1 sec</sleeptime>
+  <log mode="roll-by-time"> 
+  <logpath>logs</logpath>
+  <workingdirectory>.</workingdirectory>
+<period>1</period> <pattern>yyyyMMdd</pattern>  <keepFiles>10</keepFiles>
+  </log>
+</service>

@@ -7,15 +7,7 @@ from config.jwt_token_config import check_jwt_token
 from models.models import UserRoles
 from repository.users_repo import get_lista_permessi_endpoint, get_user_roles
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler("app.log"),
-        logging.StreamHandler()
-    ]
-)
-logging.getLogger("watchfiles.main").setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
 
 bearer_scheme = HTTPBearer()

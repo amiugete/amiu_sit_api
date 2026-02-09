@@ -14,15 +14,6 @@ class TipoUtenza(str, Enum):
     UD = "UD"
     UND = "UND"
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler("app.log"),
-        logging.StreamHandler()
-    ]
-)
-logging.getLogger("watchfiles.main").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Servizi IDEA"])

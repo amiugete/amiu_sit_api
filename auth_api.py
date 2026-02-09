@@ -8,15 +8,7 @@ from passlib.context import CryptContext
 from config.ldap_amiu import verifica_utente_amiu_LDAP
 from config.jwt_token_config import create_access_token
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler("app.log"),
-        logging.StreamHandler()
-    ]
-)
-logging.getLogger("watchfiles.main").setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
