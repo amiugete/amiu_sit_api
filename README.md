@@ -22,10 +22,79 @@ L'API supporta:
 
 ## 🚀 Installazione e Configurazione
 
+
 ### Prerequisiti
 - Python 3.8+
 - PostgreSQL
 - pip
+- [WinSW (Windows Service Wrapper)](https://github.com/winsw/winsw) per installare l'app come servizio Windows
+## 🖥️ Installazione come Servizio Windows (WinSW)
+
+Per eseguire l'applicazione come servizio di sistema su Windows, puoi utilizzare [WinSW](https://github.com/winsw/winsw). Questo consente di avviare automaticamente l'API all'avvio del sistema e gestirla come un normale servizio Windows.
+
+### 1. Scarica WinSW
+Scarica l'eseguibile WinSW (ad esempio `WinSW-x64.exe`) dalla [pagina dei rilasci](https://github.com/winsw/winsw/releases) e rinominalo in `fastapi-service.exe`.
+
+### 2. Configura il file XML del servizio
+Nella root del progetto è già presente il file `fastapi-service.xml` di esempio. Ecco i punti principali:
+
+- **Percorso Python**: Il servizio usa l'eseguibile Python dell'ambiente virtuale (`.venv\Scripts\python.exe`).
+- **Variabile di ambiente**: `APP_ROOT` viene impostata come root del progetto.
+- **Comando di avvio**: Avvia Uvicorn con 4 worker sulla porta 8000.
+- **Log**: I log vengono salvati nella cartella `logs`.
+
+Puoi personalizzare il file XML secondo le tue esigenze. Esempio:
+
+```xml
+<service>
+   <id>fastapi-service</id>
+   <name>FastAPI Service</name>
+   <description>Servizio FastAPI con WinSW</description>
+   <env name="APP_ROOT" value="C:\Sviluppo\amiu_sit_api" />
+   <executable>%APP_ROOT%\.venv\Scripts\python.exe</executable>
+   <arguments>-m uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4</arguments>
+   <workingdirectory>%APP_ROOT%</workingdirectory>
+   <priority>Normal</priority>
+   <stoptimeout>15 sec</stoptimeout>
+   <stopparentprocessfirst>true</stopparentprocessfirst>
+   <startmode>Automatic</startmode>
+   <waithint>15 sec</waithint>
+   <sleeptime>1 sec</sleeptime>
+   <log mode="roll-by-time">
+      <logpath>%APP_ROOT%\logs</logpath>
+      <workingdirectory>%APP_ROOT%</workingdirectory>
+      <period>1</period>
+      <pattern>yyyyMMdd</pattern>
+      <keepFiles>10</keepFiles>
+   </log>
+</service>
+```
+
+### 3. Installa il servizio
+Apri un terminale come **amministratore** nella cartella del progetto e lancia:
+
+```powershell
+./fastapi-service.exe install
+```
+
+### 4. Avvia/ferma il servizio
+Per avviare:
+```powershell
+./fastapi-service.exe start
+```
+Per fermare:
+```powershell
+./fastapi-service.exe stop
+```
+Per disinstallare:
+```powershell
+./fastapi-service.exe uninstall
+```
+
+### 5. Log
+I log del servizio sono disponibili nella cartella `logs`.
+
+---
 
 ### Setup
 
