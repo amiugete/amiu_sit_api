@@ -15,4 +15,5 @@ build/
 app.log
 .vscode/
 *.exe
+*.log
 

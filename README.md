@@ -156,7 +156,7 @@ Genera un token JWT per autenticare un utente tramite credenziali LDAP.
 
 ---
 
-### Servizi Pubblici (`/ws_amiugis`)
+### Servizi Pubblici (`/`)
 Questi endpoint sono ad accesso libero e non richiedono autenticazione.
 
 #### `GET /mappe`
@@ -197,7 +197,7 @@ Recupera i layer filtrati in base a titolo mappa, livello e nome.
 
 ---
 
-### Servizi di Localizzazione (`/ws_amiugis`)
+### Servizi di Localizzazione (`/`)
 
 #### `GET /point2area`
 Restituisce le informazioni sull'area (comune, municipio, quartiere, etc.) a partire da coordinate geografiche.
@@ -206,7 +206,7 @@ Restituisce le informazioni sull'area (comune, municipio, quartiere, etc.) a par
 
 ---
 
-### Servizi TELLUS (`/ws_amiugis`)
+### Servizi TELLUS (`/`)
 Questi endpoint forniscono dati operativi dal sistema TELLUS e non richiedono autenticazione.
 
 #### `GET /percorsi_p`
@@ -231,7 +231,7 @@ Restituisce la lista di Unità Territoriali e Rimesse con paginazione e filtro d
 
 ---
 
-### Servizi IDEA (`/ws_amiugis`)
+### Servizi IDEA (`/`)
 Questi endpoint richiedono un token di autenticazione Bearer.
 
 #### `GET /utenze_tari`
