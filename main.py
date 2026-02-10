@@ -44,3 +44,8 @@ app.include_router(prefix="/ws_amiugis", router=idea_router)
 app.include_router(prefix="/ws_amiugis", router=tellus_router)
 app.include_router(prefix="/ws_amiugis", router=localizzazione_router)
 
+
+@app.get(app.root_path + "/openapi.json")
+def custom_swagger_ui_html():
+    return app.openapi()
+
