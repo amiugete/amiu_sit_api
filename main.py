@@ -34,18 +34,14 @@ logging.getLogger("watchfiles.main").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 # Inizializza l'app FastAPI
-app = FastAPI(title="API AMIU SIT", version="1.0.0", description="API per l'accesso ai dati geografici di AMIU",root_path="/api")
+app = FastAPI(title="API AMIU SIT", version="1.0.0", description="API per l'accesso ai dati geografici di AMIU",root_path="/test")
 
 # Definizione del router per l'autenticazione (accesso libero)
-app.include_router(prefix="/auth", tags=["Servizi di autenticazione"], router=auth_router)
+app.include_router(prefix="/ws_amiugis/auth", tags=["Servizi di autenticazione"], router=auth_router)
 # Definizione del router per i servizi pubblici (accesso libero)
 app.include_router(prefix="/ws_amiugis", tags=["Servizi ad accesso libero"], router=public_router)
 app.include_router(prefix="/ws_amiugis", router=idea_router)
 app.include_router(prefix="/ws_amiugis", router=tellus_router)
 app.include_router(prefix="/ws_amiugis", router=localizzazione_router)
 
-
-@app.get(app.root_path + "/openapi.json")
-def custom_swagger_ui_html():
-    return app.openapi()
 
