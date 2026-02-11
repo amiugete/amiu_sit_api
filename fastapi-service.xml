@@ -3,10 +3,10 @@
   <name>FastAPI Service</name>
   <description>Servizio FastAPI con WinSW</description>
   <!-- Definizione variabile di ambiente per la root -->
-  <env name="APP_ROOT" value="C:\Sviluppo\amiu_sit_api" />
+  <env name="APP_ROOT" value="C:\python\amiu_sit_api" />
   <!-- Uso della variabile per i percorsi -->
   <executable>%APP_ROOT%\.venv\Scripts\python.exe</executable>
-  <arguments>-m uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4</arguments>
+  <arguments>-m uvicorn main:app --host 0.0.0.0 --port 8001 --workers 2</arguments>
   <workingdirectory>%APP_ROOT%</workingdirectory>
   <priority>Normal</priority>
   <stoptimeout>15 sec</stoptimeout>

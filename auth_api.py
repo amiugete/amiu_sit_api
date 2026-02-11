@@ -41,9 +41,12 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             detail="Utente non trovato",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    # Creazione dell'oggetto User con i dati recuperati dal database
     user = User(**user_record)
+    
     try:
-        access_token = create_access_token(data={"sub": username, "user_id": user.id_user, "email": user.email})
+        access_token = create_access_token(data={"sub": username, "user_id": user.id_user, "email": user.email, "role": user.role_name})
         logger.info(f"Utente {username} autenticato con successo.")
     except Exception as e:
         logger.error(f"Errore durante la creazione del token per l'utente {username}: {e}")
