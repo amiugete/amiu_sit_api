@@ -11,7 +11,7 @@
   <priority>Normal</priority>
   <stoptimeout>15 sec</stoptimeout>
   <stopparentprocessfirst>true</stopparentprocessfirst>
-  <startmode>Manual</startmode>
+  <startmode>Automatic</startmode>
   <waithint>15 sec</waithint>
   <sleeptime>1 sec</sleeptime>
   <log mode="roll-by-time"> 
