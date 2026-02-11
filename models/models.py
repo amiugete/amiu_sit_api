@@ -107,7 +107,9 @@ class PointOfInterest(MyBaseModel):
 class User(MyBaseModel):
     id_user: int
     name: str
+    role_name: str 
     email: Optional[str] = None
+    
 
 class Mappa(MyBaseModel):
     titolo: str

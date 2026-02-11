@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+# Endpoint per il recupero dei layer filtrati in base a titolo mappa, livello e nome
+# nel main richiamerò questi router e li inizializzo
 
 @router.get("/mappe", description="Recupera le mappe disponibili")
 def mappe():
@@ -39,13 +41,16 @@ class LivelloFiltro(str, Enum):
     comune = "comune"
     municipio = "municipio"
 
+
+
 @router.get(
     "/layer_filter",
     response_model=List[LayerFilterResponse],
     description="Recupera i layer filtrati in base a titolo mappa, livello e nome."
 )
 def get_layer_filter(
-    t: str = Query(..., description="Titolo della mappa"),
+    t: str = Query(..., description="Titolo della mappa"), 
+    # ... indica che è un parametro obbligatorio
     l: LivelloFiltro = Query(..., description="Livello del filtro"),
     n: str = Query(..., description="Nome da usare nel filtro")
 ):
@@ -287,7 +292,7 @@ def lista_municipi():
     return municipi_list
 
 
-@router.get("/pointofinterest", response_model=List[PointOfInterest], description="Recupera i dettagli dei Punti di Interesse (Rimesse, UT e Scarichi vari)")
+@router.get("/POI", response_model=List[PointOfInterest], description="Recupera i dettagli dei Punti di Interesse (Rimesse, UT e Scarichi vari)")
 def lista_point_of_interest():
     logger.info("Ricevuta richiesta GET /point of interest")
     query_select = prepared_statement_pointofinterest()

@@ -26,6 +26,7 @@ def execute_query(sql, params=None):
    try:   
         with engine.connect() as connection:
             result = connection.execute(text(sql), params or {})
+            # vedere se si riesce a spostare sotto 
             connection.commit() # Necessario per INSERT/UPDATE
             return result
    except Exception as e:

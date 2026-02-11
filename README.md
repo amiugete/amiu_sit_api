@@ -86,7 +86,7 @@ Per fermare:
 ```powershell
 ./fastapi-service.exe stop
 ```
-Per disinstallare:
+Per disinstallare (necessario in caso di modifiche al file XML, altrimenti è sufficiente stop e start):
 ```powershell
 ./fastapi-service.exe uninstall
 ```
