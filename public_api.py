@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException,Depends
+from business.permission import get_current_user
 from typing import Any, List, Optional, Union
 from enum import Enum
 from config.database import execute_query
@@ -25,8 +26,10 @@ router = APIRouter()
 # Endpoint per il recupero dei layer filtrati in base a titolo mappa, livello e nome
 # nel main richiamerò questi router e li inizializzo
 
-@router.get("/mappe", description="Recupera le mappe disponibili")
-def mappe():
+@router.get("/mappe", description="Recupera le mappe disponibili. Richiede autenticazione (Bearer Token).")
+def mappe(
+    payload: dict[str, Any] = Depends(get_current_user)
+):
     logger.info("Ricevuta richiesta GET /mappe")
     query_select = prepared_statement_mappe()
     listaMappe = execute_query(query_select, {})
@@ -46,13 +49,13 @@ class LivelloFiltro(str, Enum):
 @router.get(
     "/layer_filter",
     response_model=List[LayerFilterResponse],
-    description="Recupera i layer filtrati in base a titolo mappa, livello e nome."
+    description="Recupera i layer filtrati in base a titolo mappa, livello e nome. Richiede autenticazione (Bearer Token)."
 )
 def get_layer_filter(
     t: str = Query(..., description="Titolo della mappa"), 
-    # ... indica che è un parametro obbligatorio
     l: LivelloFiltro = Query(..., description="Livello del filtro"),
-    n: str = Query(..., description="Nome da usare nel filtro")
+    n: str = Query(..., description="Nome da usare nel filtro"),
+    payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info(f"Ricevuta richiesta GET /layer_filter con t={t}, l={l.value}, n={n}")
     
@@ -76,7 +79,7 @@ def get_layer_filter(
     logger.info(f"Restituiti {len(result_list)} risultati per il filtro layer.")
     return result_list
 
-@router.get("/piazzole", response_model=Union[List[Piazzola],PaginatedResponse[Piazzola]],description="Recupera la lista delle piazzole con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request", )
+@router.get("/piazzole", response_model=Union[List[Piazzola],PaginatedResponse[Piazzola]],description="Recupera la lista delle piazzole con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request. Richiede autenticazione (Bearer Token).", )
 def lista_piazzole(
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
@@ -84,6 +87,7 @@ def lista_piazzole(
     municipio: Optional[int] = Query(None, description="Filtra per municipio"),
     via: Optional[int] = Query(None, description="Filtra per ID della via"),
     pap: Optional[int] = Query(None, ge=0, le=1, description="Filtra per PAP (1 = Sì, 0 = No)"),
+    payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /piazzole")
     listPiazzole: CursorResult[Any]
@@ -130,11 +134,12 @@ def lista_piazzole(
     return result
 
 
-@router.get("/vie", response_model=Union[List[Via], PaginatedResponse[Via]],description="Recupera la lista delle vie con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request", )
+@router.get("/vie", response_model=Union[List[Via], PaginatedResponse[Via]],description="Recupera la lista delle vie con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request. Richiede autenticazione (Bearer Token).", )
 def lista_vie(
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
-    comune: Optional[int] = Query(None, description="Filtra per comune")
+    comune: Optional[int] = Query(None, description="Filtra per comune"),
+    payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /vie")
     listVie: CursorResult[Any]
@@ -179,10 +184,11 @@ def lista_vie(
     return result
 
 @router.get("/comuni", response_model=List[Comune],
-         description="Recupera la lista dei comuni. Richiede un Bearer Token per l'autenticazione.")
+         description="Recupera la lista dei comuni. Richiede autenticazione (Bearer Token).")
 def lista_comuni(
     id_ambito: Optional[int] = Query(None, description="Filtra per ambito"),
-    cod_istat: Optional[str] = Query(None, description="Filtra per codice ISTAT")
+    cod_istat: Optional[str] = Query(None, description="Filtra per codice ISTAT"),
+    payload: dict[str, Any] = Depends(get_current_user)
 ):
     
     """Endpoint per recuperare la lista dei comuni"""
@@ -201,12 +207,13 @@ def lista_comuni(
     return listComuni
 
 
-@router.get("/civici", response_model=Union[PaginatedResponse[Civico], List[Civico]]  , description="Recupera la lista dei civici con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request")
+@router.get("/civici", response_model=Union[PaginatedResponse[Civico], List[Civico]]  , description="Recupera la lista dei civici con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request. Richiede autenticazione (Bearer Token).")
 def lista_civici(
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
     id_municipio: Optional[int] = Query(None, description="Filtra per municipio"),
-    id_via: Optional[int] = Query(None, description="Filtra per via")
+    id_via: Optional[int] = Query(None, description="Filtra per via"),
+    payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /civici")
     listCivici: CursorResult[Any]
@@ -251,9 +258,10 @@ def lista_civici(
     return result
 
 
-@router.get("/quartieri", response_model=List[Quartiere], description="Recupera la lista dei quartieri")
+@router.get("/quartieri", response_model=List[Quartiere], description="Recupera la lista dei quartieri. Richiede autenticazione (Bearer Token).")
 def lista_quartieri(
-    id_municipio: Optional[int] = Query(None, description="Filtra per municipio")
+    id_municipio: Optional[int] = Query(None, description="Filtra per municipio"),
+    payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /quartieri")
     params = {"id_municipio": id_municipio}
@@ -267,8 +275,10 @@ def lista_quartieri(
     return listQuartieri
 
 
-@router.get("/ambiti", response_model=List[Ambito], description="Recupera la lista degli ambiti")
-def lista_ambiti():
+@router.get("/ambiti", response_model=List[Ambito], description="Recupera la lista degli ambiti. Richiede autenticazione (Bearer Token).")
+def lista_ambiti(
+    payload: dict[str, Any] = Depends(get_current_user)
+):
     logger.info("Ricevuta richiesta GET /ambiti")
     query_select = prepared_statement_ambiti()
     listAmbiti = execute_query(query_select, {})
@@ -279,8 +289,10 @@ def lista_ambiti():
     logger.info(f"Restituiti {len(listAmbiti)} ambiti.")
     return listAmbiti
 
-@router.get("/municipi", response_model=List[Municipio], description="Recupera la lista dei municipi")
-def lista_municipi():
+@router.get("/municipi", response_model=List[Municipio], description="Recupera la lista dei municipi. Richiede autenticazione (Bearer Token).")
+def lista_municipi(
+    payload: dict[str, Any] = Depends(get_current_user)
+):
     logger.info("Ricevuta richiesta GET /municipi")
     query_select = prepared_statement_municipi_genova()
     municipi_row = execute_query(query_select, {})
@@ -292,8 +304,10 @@ def lista_municipi():
     return municipi_list
 
 
-@router.get("/POI", response_model=List[PointOfInterest], description="Recupera i dettagli dei Punti di Interesse (Rimesse, UT e Scarichi vari)")
-def lista_point_of_interest():
+@router.get("/POI", response_model=List[PointOfInterest], description="Recupera i dettagli dei Punti di Interesse (Rimesse, UT e Scarichi vari). Richiede autenticazione (Bearer Token).")
+def lista_point_of_interest(
+    payload: dict[str, Any] = Depends(get_current_user)
+):
     logger.info("Ricevuta richiesta GET /point of interest")
     query_select = prepared_statement_pointofinterest()
     listPointOfInterest = execute_query(query_select, {})

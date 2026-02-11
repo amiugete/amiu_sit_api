@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException,Depends
+from business.permission import get_current_user
 from typing import Any, List
 from config.database import execute_query
 from models.models import Point2Area
@@ -13,11 +14,12 @@ router = APIRouter(tags=["Servizi di Localizzazione"])
 @router.get(
     "/point2area",
     response_model=List[Point2Area],
-    description="Restituisce le informazioni sull'area (comune, municipio, quartiere, etc.) corrispondente a un punto geografico dato in coordinate WGS84."
+    description="Restituisce le informazioni sull'area (comune, municipio, quartiere, etc.) corrispondente a un punto geografico dato in coordinate WGS84. Richiede autenticazione (Bearer Token)."
 )
 def get_area_from_point(
     lat: float = Query(..., description="Latitudine in gradi decimali (WGS84)", ge=-90, le=90),
-    lon: float = Query(..., description="Longitudine in gradi decimali (WGS84)", ge=-180, le=180)
+    lon: float = Query(..., description="Longitudine in gradi decimali (WGS84)", ge=-180, le=180),
+    payload: dict[str, Any] = Depends(get_current_user)
 ):
     """
     Dato un punto geografico (lat, lon), restituisce le informazioni sull'area geografica di appartenenza.

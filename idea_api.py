@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Query, Depends, HTTPException, status
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional
 from business.permission import get_current_user, verifica_permesso_utente_endpoint
 from config.database import execute_query
 from models.models import  PaginatedResponse, PercorsoDettaglio,Utenza,Bilaterali_albero,Bilaterali
 from repository.bilaterali_repo import prepared_statement_bilaterali_albero,prepared_statement_bilaterali, prepared_statement_percorso_dettaglio
-from repository.vie_repo import prepared_statement_vie, prepared_statement_vie_with_count
 from repository.utenze_repo import prepared_statement_utenze_UD_with_count,prepared_statement_utenze_UND_with_count
 from sqlalchemy import CursorResult
 import logging
@@ -80,7 +79,11 @@ def lista_utenze(
     return result
 
 @router.get("/elenco_percorsi_bilaterali_tree", response_model=List[Bilaterali_albero], description="Recupera la lista dei percorsi bilaterali ad albero")
-def elenco_percorsi_bilaterali_tree():
+def elenco_percorsi_bilaterali_tree(
+    payload: dict[str, Any] = Depends(get_current_user)
+):
+    """Endpoint per recuperare la lista dei percorsi bilaterali ad albero con autenticazione."""
+    
     logger.info("Ricevuta richiesta GET /elenco_percorsi_bilaterali_tree")
 
     query_select = prepared_statement_bilaterali_albero()
@@ -96,7 +99,11 @@ def elenco_percorsi_bilaterali_tree():
 
 
 @router.get("/elenco_percorsi_bilaterali", response_model=List[Bilaterali], description="Recupera la lista dei percorsi bilaterali")
-def elenco_percorsi_bilaterali():
+def elenco_percorsi_bilaterali(
+    payload: dict[str, Any] = Depends(get_current_user)
+):
+    """Endpoint per recuperare la lista dei percorsi bilaterali con autenticazione."""
+      
     logger.info("Ricevuta richiesta GET /elenco_percorsi_bilaterali")
 
     query_select = prepared_statement_bilaterali()
@@ -112,8 +119,11 @@ def elenco_percorsi_bilaterali():
 
 @router.get("/dettagli_percorso", response_model=List[PercorsoDettaglio], description="Recupera la lista dei percorsi bilaterali")
 def dettagli_percorso(
-    id: Optional[str] = Query(..., description="ID del percorso per filtrare i percorsi bilaterali")
+    id: Optional[str] = Query(..., description="ID del percorso per filtrare i percorsi bilaterali"),
+    payload: dict[str, Any] = Depends(get_current_user)
 ):
+    """Endpoint per recuperare i dettagli del percorso con autenticazione."""
+    
     logger.info("Ricevuta richiesta GET /dettagli_percorso")
     query_select = prepared_statement_percorso_dettaglio()
     dettaglio_cursor = execute_query(query_select, {"id": id})

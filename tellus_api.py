@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query,Depends
+from business.permission import get_current_user
 from typing import Any, List, Optional, Union
 from config.database import execute_query
 from models.models import  Deposito, ElementoAmiu, ItinerarioPercorsoPsteriore, PaginatedResponse, PiazzolaAmiu, PosterioriPercorso
@@ -18,12 +19,13 @@ router = APIRouter(tags=["Servizi TELLUS"])
 @router.get(
     "/percorsi_p",
     response_model=Union[List[PosterioriPercorso], PaginatedResponse[PosterioriPercorso]],
-    description="Restituisce la lista dei percorsi posteriori. Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD)."
+    description="Restituisce la lista dei percorsi posteriori. Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD). Richiede autenticazione (Bearer Token)."
 )
 def lista_percorsi_p(
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
-    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$")
+    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
+    payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /percorsi_p")
     listPercorsi_row: CursorResult[Any]
@@ -59,12 +61,13 @@ def lista_percorsi_p(
 @router.get(
     "/piazzole_amiu",
     response_model=Union[List[PiazzolaAmiu], PaginatedResponse[PiazzolaAmiu]],
-    description="Restituisce la lista delle piazzole amiu. Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD)."
+    description="Restituisce la lista delle piazzole amiu. Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD). Richiede autenticazione (Bearer Token)."
 )
 def lista_piazzole_amiu(
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
-    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$")
+    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
+    payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /piazzole_amiu")
     piazzole_row: CursorResult[Any]
@@ -104,12 +107,13 @@ def lista_piazzole_amiu(
 @router.get(
     "/elementi_p",
     response_model=Union[List[ElementoAmiu], PaginatedResponse[ElementoAmiu]],
-    description="Restituisce la lista delle piazzole amiu. Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD)."
+    description="Restituisce la lista delle piazzole amiu. Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD). Richiede autenticazione (Bearer Token)."
 )
 def lista_elementi_p(
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
-    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$")
+    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
+    payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /elementi_p")
     elementi_row: CursorResult[Any]
@@ -148,12 +152,13 @@ def lista_elementi_p(
 @router.get(
     "/itinerari_p",
     response_model=Union[List[ItinerarioPercorsoPsteriore], PaginatedResponse[ItinerarioPercorsoPsteriore]],
-    description="Restituisce la lista degli itinerari dei percorsi dei posteriori amiu. Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD)."
+    description="Restituisce la lista degli itinerari dei percorsi dei posteriori amiu. Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD). Richiede autenticazione (Bearer Token)."
 )
 def lista_itinerari_p(
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
-    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$")
+    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
+    payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /itinerari_p")
     itinerari_row: CursorResult[Any]
@@ -192,12 +197,13 @@ def lista_itinerari_p(
 @router.get(
     "/depositi",
     response_model=Union[List[Deposito], PaginatedResponse[Deposito]],
-    description="Restituisce la lista delle Unità Territoriali e delle Rimesse. Supporta la paginazione e il filtro per data di ultimo aggiornamento."
+    description="Restituisce la lista delle Unità Territoriali e delle Rimesse. Supporta la paginazione e il filtro per data di ultimo aggiornamento. Richiede autenticazione (Bearer Token)."
 )
 def lista_depositi(
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
-    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD", pattern=r"^\d{8}$")
+    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD", pattern=r"^\d{8}$"),
+    payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /depositi")
     offset = 0
