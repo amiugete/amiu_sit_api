@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, Depends, HTTPException, status
-from config.database import execute_query
-from models.models import User
-from repository.users_repo import check_user_db
+from config.database import fetch_list_by_query,fetch_one_by_query
+from models.models import User,UserRoles
+from repository.users_repo import check_user_db, get_user_roles
 import logging
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm, HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
@@ -23,6 +23,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     username = form_data.username
     password = form_data.password
     logger.info(f"Ricevuta richiesta di login per l'utente {username}")
+
+    ## Verifica lDAP#####################
     is_authenticated, msg = verifica_utente_amiu_LDAP(username, password)
     if not is_authenticated:
         logger.warning(f"Autenticazione fallita per l'utente {username}: {msg}")
@@ -31,19 +33,38 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             detail="Credenziali non valide",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    ############### VErifica presenza utente nel database #######################
     user_query = check_user_db(username)
-    user_record = execute_query(user_query, {"name": username})
-    user_record = user_record.mappings().first() if user_record else None
-    if not user_record:
-        logger.warning(f"Utente {username} non trovato nel database.")
+
+    try:
+        user_record = fetch_one_by_query(user_query, {"name": username})
+        if not user_record:
+            logger.warning(f"Utente {username} non trovato nel database.")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Utente non trovato",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except Exception as e:
+        logger.error(f"Errore durante la verifica dell'utente {username} nel database: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Utente non trovato",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+            detail="Errore utente non trovato",
+        )    
+
+    
+    # Creazione dell'oggetto User con i dati recuperati dal database per inserimento parametri nel token JWT
     user = User(**user_record)
+
+    # Una volta ottenuto l'utente verifico se ha il permesso per l'utenze e lo aggiungo al token come parametro per poterlo utilizzare nei servizi che richiedono questo permesso specifico####
+    # Per eventuali futuri permessi, si potrebbe implementare una logica simile per aggiungere altri parametri al token in base ai permessi dell'utente, in modo da avere un token più ricco di informazioni sui privilegi dell'utente.
+    user_roles_query = get_user_roles()
+    utente_role = fetch_one_by_query(user_roles_query, {"id_user": user.id_user})
+    utente_role = UserRoles(**utente_role) if utente_role else None
+    utenze_param = {"utenze": utente_role.utenze if utente_role is not None and utente_role.utenze else False}
+    ########################################################
     try:
-        access_token = create_access_token(data={"sub": username, "user_id": user.id_user, "email": user.email})
+        access_token = create_access_token(data={"sub": username, "user_id": user.id_user, "email": user.email, "role": user.role_name,**utenze_param})
         logger.info(f"Utente {username} autenticato con successo.")
     except Exception as e:
         logger.error(f"Errore durante la creazione del token per l'utente {username}: {e}")

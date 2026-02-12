@@ -86,7 +86,7 @@ Per fermare:
 ```powershell
 ./fastapi-service.exe stop
 ```
-Per disinstallare:
+Per disinstallare (necessario in caso di modifiche al file XML, altrimenti è sufficiente stop e start):
 ```powershell
 ./fastapi-service.exe uninstall
 ```
@@ -117,26 +117,48 @@ I log del servizio sono disponibili nella cartella `logs`.
 
 4. **Configura le variabili di ambiente**
 
-   Crea un file `.env` nella root del progetto e inserisci le seguenti variabili.
 
-   **Database:**
+   Crea un file `.env` nella root del progetto e inserisci le seguenti variabili (vedi esempio):
+
+   **Variabili generali:**
    ```env
-   DB_USER=postgres
-   DB_PASSWORD=your_db_password
-   DB_HOST=localhost
+   # root path della URL
+   ENVIRONMENT_CONTEXT_PATH=test
+   ```
+
+   **Database SIT:**
+   ```env
+   DB_USER=webgis
+   DB_PASSWORD=qgisisN1ce
+   DB_HOST=172.24.4.39
    DB_PORT=5432
-   DB_NAME=amiu
+   DB_NAME=sit_test
+   ```
+
+   **Database Mappe (per WS mappe duale):**
+   ```env
+   DB_HOST_MAPPE=amiugis
+   DB_PORT_MAPPE=5432
+   DB_NAME_MAPPE=api_db
+   DB_USER_MAPPE=api
+   DB_PASSWORD_MAPPE=4pi1sN1ce
    ```
 
    **Autenticazione JWT:**
-   Aggiungi queste variabili al tuo file `.env` per configurare la generazione dei token.
    ```env
-   SECRET_KEY=la_tua_chiave_segreta_super_difficile
-   ACCESS_TOKEN_EXPIRE_MINUTES=30
+   SECRET_KEY=3;aIroI82#sPV0bDkh
+   ACCESS_TOKEN_EXPIRE_MINUTES=60
    ```
-   - `SECRET_KEY`: Una stringa lunga e casuale usata per firmare i token.
-   - `ALGORITHM`: L'algoritmo di hashing (es. HS256).
-   - `ACCESS_TOKEN_EXPIRE_MINUTES`: La durata di validità del token in minuti.
+   - `SECRET_KEY`: Stringa lunga e casuale usata per firmare i token.
+   - `ACCESS_TOKEN_EXPIRE_MINUTES`: Durata di validità del token in minuti.
+
+   **LDAP AMIU:**
+   ```env
+   HOST_AMIU_LDAP=172.24.4.1
+   DOMAIN_NAME_AMIU=amiu.genova.it
+   ```
+
+   > ⚠️ Ricordati di aggiornare le variabili secondo il tuo ambiente. Tutte le connessioni ai database e servizi usano queste variabili tramite il file `.env`.
 
 5. **Avvia il server in sviluppo**
    ```bash
@@ -157,43 +179,53 @@ Genera un token JWT per autenticare un utente tramite credenziali LDAP.
 ---
 
 ### Servizi Pubblici (`/`)
-Questi endpoint sono ad accesso libero e non richiedono autenticazione.
+Questi endpoint richiedono autenticazione tramite Bearer Token (JWT).
 
 #### `GET /mappe`
 Recupera le mappe disponibili.
+- **Autorizzazione**: Richiesto token JWT.
 
 #### `GET /piazzole`
 Recupera la lista delle piazzole con filtri e paginazione.
 - **Parametri**: `page`, `size`, `comune`, `municipio`, `via`, `pap`.
+- **Autorizzazione**: Richiesto token JWT.
 
 #### `GET /vie`
 Recupera la lista delle vie con filtri e paginazione.
 - **Parametri**: `page`, `size`, `comune`.
+- **Autorizzazione**: Richiesto token JWT.
 
 #### `GET /comuni`
 Recupera la lista dei comuni.
 - **Parametri**: `id_ambito`, `cod_istat`.
+- **Autorizzazione**: Richiesto token JWT.
 
 #### `GET /civici`
 Recupera la lista dei civici con filtri e paginazione.
 - **Parametri**: `page`, `size`, `id_municipio`, `id_via`.
+- **Autorizzazione**: Richiesto token JWT.
 
 #### `GET /quartieri`
 Recupera la lista dei quartieri.
 - **Parametri**: `id_municipio`.
+- **Autorizzazione**: Richiesto token JWT.
 
 #### `GET /ambiti`
 Recupera la lista degli ambiti.
+- **Autorizzazione**: Richiesto token JWT.
 
 #### `GET /municipi`
 Recupera la lista dei municipi di Genova.
+- **Autorizzazione**: Richiesto token JWT.
 
-#### `GET /pointofinterest`
+#### `GET /POI`
 Recupera i dettagli dei Punti di Interesse (Rimesse, UT e Scarichi vari).
+- **Autorizzazione**: Richiesto token JWT.
 
 #### `GET /layer_filter`
 Recupera i layer filtrati in base a titolo mappa, livello e nome.
 - **Parametri**: `t` (titolo), `l` ('ambito', 'comune', 'municipio'), `n` (nome).
+- **Autorizzazione**: Richiesto token JWT.
 
 ---
 
@@ -202,32 +234,37 @@ Recupera i layer filtrati in base a titolo mappa, livello e nome.
 #### `GET /point2area`
 Restituisce le informazioni sull'area (comune, municipio, quartiere, etc.) a partire da coordinate geografiche.
 - **Parametri**: `lat` (latitudine), `lon` (longitudine).
-- **Autorizzazione**: Nessuna.
+- **Autorizzazione**: Richiesto token JWT.
 
 ---
 
 ### Servizi TELLUS (`/`)
-Questi endpoint forniscono dati operativi dal sistema TELLUS e non richiedono autenticazione.
+Questi endpoint forniscono dati operativi dal sistema TELLUS e richiedono autenticazione tramite Bearer Token (JWT).
 
 #### `GET /percorsi_p`
 Restituisce la lista dei percorsi posteriori con paginazione e filtro data.
 - **Parametri**: `page`, `size`, `last_update`.
+- **Autorizzazione**: Richiesto token JWT.
 
 #### `GET /piazzole_amiu`
 Restituisce la lista delle piazzole AMIU con paginazione e filtro data.
 - **Parametri**: `page`, `size`, `last_update`.
+- **Autorizzazione**: Richiesto token JWT.
 
 #### `GET /elementi_p`
 Restituisce la lista degli elementi con paginazione e filtro data.
 - **Parametri**: `page`, `size`, `last_update`.
+- **Autorizzazione**: Richiesto token JWT.
 
 #### `GET /itinerari_p`
 Restituisce la lista degli itinerari dei percorsi posteriori con paginazione e filtro data.
 - **Parametri**: `page`, `size`, `last_update`.
+- **Autorizzazione**: Richiesto token JWT.
 
 #### `GET /depositi`
 Restituisce la lista di Unità Territoriali e Rimesse con paginazione e filtro data.
 - **Parametri**: `page`, `size`, `last_update`.
+- **Autorizzazione**: Richiesto token JWT.
 
 ---
 
@@ -241,16 +278,16 @@ Recupera la lista delle utenze TARI (Domestiche o Non Domestiche) con paginazion
 
 #### `GET /elenco_percorsi_bilaterali_tree`
 Recupera la lista dei percorsi bilaterali strutturata ad albero.
-- **Autorizzazione**: Nessuna (potrebbe essere un errore, da verificare).
+- **Autorizzazione**: Richiesto token JWT.
 
 #### `GET /elenco_percorsi_bilaterali`
 Recupera la lista flat dei percorsi bilaterali.
-- **Autorizzazione**: Nessuna (potrebbe essere un errore, da verificare).
+- **Autorizzazione**: Richiesto token JWT.
 
 #### `GET /dettagli_percorso`
 Recupera i dettagli di uno specifico percorso bilaterale.
 - **Parametri**: `id` del percorso.
-- **Autorizzazione**: Nessuna (potrebbe essere un errore, da verificare).
+- **Autorizzazione**: Richiesto token JWT.
 
 ## 🐛 Gestione Errori
 

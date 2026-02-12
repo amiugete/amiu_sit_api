@@ -1,14 +1,17 @@
 from fastapi import APIRouter, Query, Depends, HTTPException, status
-from typing import Any, List, Optional, Union
-from business.permission import get_current_user, verifica_permesso_utente_endpoint
-from config.database import execute_query
+from typing import Any, List, Optional
+from business.permission import get_current_user, verifica_permesso_utenze
+from config.database import fetch_list_by_query,fetch_one_by_query
 from models.models import  PaginatedResponse, PercorsoDettaglio,Utenza,Bilaterali_albero,Bilaterali
 from repository.bilaterali_repo import prepared_statement_bilaterali_albero,prepared_statement_bilaterali, prepared_statement_percorso_dettaglio
-from repository.vie_repo import prepared_statement_vie, prepared_statement_vie_with_count
 from repository.utenze_repo import prepared_statement_utenze_UD_with_count,prepared_statement_utenze_UND_with_count
-from sqlalchemy import CursorResult
 import logging
 from enum import Enum
+
+
+# I servizi in alcuni casi restituiscono liste potenzialmente molto grandi, per questo motivo è stata implementata la paginazione.per
+# per vedere un esempio di implementazione della paginazione si può guardare l'endpoint /utenze_tari che restituisce la lista delle utenze tari con i relativi filtri e parametri di paginazione. 
+
 
 class TipoUtenza(str, Enum):
     UD = "UD"
@@ -27,7 +30,8 @@ def lista_utenze(
 ):
     """Endpoint per recuperare la lista delle utenze con autenticazione."""
     
-    is_auth,msg =  verifica_permesso_utente_endpoint("/utenze_tari", payload.get("user_id"))
+    # Verifica dei permessi dell'utente per accedere a questo endpoint prendendo le informazioni dal payload ottenuto con get_current_user
+    is_auth,msg = verifica_permesso_utenze(payload)
 
     if not is_auth:
         logger.warning(f"Accesso non autorizzato all'endpoint /utenze_tari per l'utente ID {payload.get('user_id')}: {msg}")
@@ -37,7 +41,7 @@ def lista_utenze(
         )
     
     logger.info("Ricevuta richiesta GET /utenze_tari")
-    cursor_Utenze: CursorResult[Any]
+    lista_dict_utenze: List[dict] | Any = None
     list_utenze : List[Utenza] = []
     result: PaginatedResponse[Utenza] = PaginatedResponse[Utenza]()
     query_select = ''
@@ -54,9 +58,9 @@ def lista_utenze(
         else:
             query_select = prepared_statement_utenze_UND_with_count()
 
-        cursor_Utenze = execute_query(query_select, {"limit": limit, "offset": offset})
+        lista_dict_utenze = fetch_list_by_query(query_select, {"limit": limit, "offset": offset})
 
-        if cursor_Utenze is None or cursor_Utenze.rowcount == 0:
+        if lista_dict_utenze is None or len(lista_dict_utenze) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
             result.content = []
             result.total = 0
@@ -65,7 +69,7 @@ def lista_utenze(
             result.pages = 0
             return result
 
-        list_utenze = [Utenza(**row) for row in cursor_Utenze.mappings()]
+        list_utenze = [Utenza(**row) for row in lista_dict_utenze]
 
         result.total = list_utenze[0].totale_record
         result.content = list_utenze
@@ -80,49 +84,60 @@ def lista_utenze(
     return result
 
 @router.get("/elenco_percorsi_bilaterali_tree", response_model=List[Bilaterali_albero], description="Recupera la lista dei percorsi bilaterali ad albero")
-def elenco_percorsi_bilaterali_tree():
+def elenco_percorsi_bilaterali_tree(
+    payload: dict[str, Any] = Depends(get_current_user)
+):
+    """Endpoint per recuperare la lista dei percorsi bilaterali ad albero con autenticazione."""
+    
     logger.info("Ricevuta richiesta GET /elenco_percorsi_bilaterali_tree")
 
     query_select = prepared_statement_bilaterali_albero()
-    list_bilaterali_albero = execute_query(query_select, {})
+    list_bilaterali_albero = fetch_list_by_query(query_select, {})
 
-    if list_bilaterali_albero is None or list_bilaterali_albero.rowcount == 0:
+    if list_bilaterali_albero is None or len(list_bilaterali_albero) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
         return []
     
-    list_bilaterali_albero = [Bilaterali_albero(**row) for row in list_bilaterali_albero.mappings()]
+    list_bilaterali_albero = [Bilaterali_albero(**row) for row in list_bilaterali_albero]
     logger.info(f"Restituiti {len(list_bilaterali_albero)} percorsi bilaterali ad albero.")
     return list_bilaterali_albero
 
 
 @router.get("/elenco_percorsi_bilaterali", response_model=List[Bilaterali], description="Recupera la lista dei percorsi bilaterali")
-def elenco_percorsi_bilaterali():
+def elenco_percorsi_bilaterali(
+    payload: dict[str, Any] = Depends(get_current_user)
+):
+    """Endpoint per recuperare la lista dei percorsi bilaterali con autenticazione."""
+      
     logger.info("Ricevuta richiesta GET /elenco_percorsi_bilaterali")
 
     query_select = prepared_statement_bilaterali()
-    list_bilaterali_cursor = execute_query(query_select, {})
+    list_bilaterali = fetch_list_by_query(query_select, {})
 
-    if list_bilaterali_cursor is None or list_bilaterali_cursor.rowcount == 0:
+    if list_bilaterali is None or len(list_bilaterali) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
         return []
     
-    list_bilaterali = [Bilaterali(**row) for row in list_bilaterali_cursor.mappings()]
+    list_bilaterali = [Bilaterali(**row) for row in list_bilaterali]
     logger.info(f"Restituiti {len(list_bilaterali)} percorsi bilaterali.")
     return list_bilaterali
 
 @router.get("/dettagli_percorso", response_model=List[PercorsoDettaglio], description="Recupera la lista dei percorsi bilaterali")
 def dettagli_percorso(
-    id: Optional[str] = Query(..., description="ID del percorso per filtrare i percorsi bilaterali")
+    id: Optional[str] = Query(..., description="ID del percorso per filtrare i percorsi bilaterali"),
+    payload: dict[str, Any] = Depends(get_current_user)
 ):
+    """Endpoint per recuperare i dettagli del percorso con autenticazione."""
+    
     logger.info("Ricevuta richiesta GET /dettagli_percorso")
     query_select = prepared_statement_percorso_dettaglio()
-    dettaglio_cursor = execute_query(query_select, {"id": id})
+    dettaglio_list = fetch_list_by_query(query_select, {"id": id})
 
-    if dettaglio_cursor is None or dettaglio_cursor.rowcount == 0:
+    if dettaglio_list is None or len(dettaglio_list) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
         return []
     
-    dettaglio_list = [PercorsoDettaglio(**row) for row in dettaglio_cursor.mappings()]
+    dettaglio_list = [PercorsoDettaglio(**row) for row in dettaglio_list]
     logger.info(f"Restituiti {len(dettaglio_list)} dettagli percorso.")
 
     return dettaglio_list
