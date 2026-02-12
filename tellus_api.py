@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query,Depends
 from business.permission import get_current_user
 from typing import Any, List, Optional, Union
-from config.database import execute_query
+from config.database import fetch_list_by_query
 from models.models import  Deposito, ElementoAmiu, ItinerarioPercorsoPsteriore, PaginatedResponse, PiazzolaAmiu, PosterioriPercorso
 from repository.depositi_repo import prepared_statement_depositi
 from repository.elementi_amiu_repo import prepared_statement_elementi_amiu
@@ -28,7 +28,7 @@ def lista_percorsi_p(
     payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /percorsi_p")
-    listPercorsi_row: CursorResult[Any]
+    listPercorsi_row: List[dict] | None
     query_select = ''
     offset = 0
     limit = 1000
@@ -39,13 +39,13 @@ def lista_percorsi_p(
 
     params = {"last_update": last_update}
     query_select = prepared_statement_posteriori_with_count()
-    listPercorsi_row = execute_query(query_select, {**params, "limit": limit, "offset": offset})
+    listPercorsi_row = fetch_list_by_query(query_select, {**params, "limit": limit, "offset": offset})
 
-    if listPercorsi_row is None:
+    if listPercorsi_row is None or len(listPercorsi_row) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
         return []
 
-    lista_percorsi_p = [PosterioriPercorso(**row) for row in listPercorsi_row.mappings()]
+    lista_percorsi_p = [PosterioriPercorso(**row) for row in listPercorsi_row]
     # Query per il ritorno del risultato paginato
     if page is not None and size is not None and size > 0 and page > 0:
         result = PaginatedResponse[PosterioriPercorso]()
@@ -70,7 +70,7 @@ def lista_piazzole_amiu(
     payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /piazzole_amiu")
-    piazzole_row: CursorResult[Any]
+    piazzole_row: List[dict] | None
     query_select = ''
     offset = 0
     limit = 1000
@@ -82,14 +82,14 @@ def lista_piazzole_amiu(
     params = {"last_update": last_update}
 
     query_select = prepared_statement_piazzole_amiu()
-    piazzole_row = execute_query(query_select, {**params, "limit": limit, "offset": offset})
+    piazzole_row = fetch_list_by_query(query_select, {**params, "limit": limit, "offset": offset})
 
-    if piazzole_row is None:
+    if piazzole_row is None or len(piazzole_row) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
             return []
 
     ## Creazione della lista delle piazzole amiu
-    lista_piazzole_paginata = [PiazzolaAmiu(**row) for row in piazzole_row.mappings()]
+    lista_piazzole_paginata = [PiazzolaAmiu(**row) for row in piazzole_row]
 
 
     if page is not None and size is not None and size > 0 and page > 0:
@@ -116,7 +116,7 @@ def lista_elementi_p(
     payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /elementi_p")
-    elementi_row: CursorResult[Any]
+    elementi_row: List[dict] | None
     query_select = ''
     offset = 0
     limit = 1000
@@ -127,14 +127,14 @@ def lista_elementi_p(
 
 
     query_select = prepared_statement_elementi_amiu()
-    elementi_row = execute_query(query_select, {"last_update": last_update,"limit": limit, "offset": offset})
+    elementi_row = fetch_list_by_query(query_select, {"last_update": last_update,"limit": limit, "offset": offset})
 
-    if elementi_row is None:
+    if elementi_row is None or len(elementi_row) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
             return []
 
     ## Creazione della lista delle piazzole amiu
-    lista_elementi = [ElementoAmiu(**row) for row in elementi_row.mappings()]
+    lista_elementi = [ElementoAmiu(**row) for row in elementi_row]
 
 
     if page is not None and size is not None and size > 0 and page > 0:
@@ -161,7 +161,7 @@ def lista_itinerari_p(
     payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /itinerari_p")
-    itinerari_row: CursorResult[Any]
+    itinerari_row: List[dict] | None
     query_select = ''
     offset = 0
     limit = 1000
@@ -172,14 +172,14 @@ def lista_itinerari_p(
 
 
     query_select = prepared_statement_percorsi_posteriori_aggiornata()
-    itinerari_row = execute_query(query_select, {"last_update": last_update,"limit": limit, "offset": offset})
+    itinerari_row = fetch_list_by_query(query_select, {"last_update": last_update,"limit": limit, "offset": offset})
 
-    if itinerari_row is None:
+    if itinerari_row is None or len(itinerari_row) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
             return []
 
     ## Creazione della lista degli itinerari amiu
-    lista_itinerari = [ItinerarioPercorsoPsteriore(**row) for row in itinerari_row.mappings()]
+    lista_itinerari = [ItinerarioPercorsoPsteriore(**row) for row in itinerari_row]
 
     if page is not None and size is not None and size > 0 and page > 0:
         result = PaginatedResponse[ItinerarioPercorsoPsteriore]()
@@ -214,13 +214,13 @@ def lista_depositi(
         limit = size
 
     query_select = prepared_statement_depositi()
-    depositi_rows = execute_query(query_select, {"last_update": last_update, "limit": limit, "offset": offset})
+    depositi_rows = fetch_list_by_query(query_select, {"last_update": last_update, "limit": limit, "offset": offset})
 
-    if depositi_rows is None:
+    if depositi_rows is None or len(depositi_rows) == 0:
         logger.info("Nessun risultato ottenuto dalla query per /depositi.")
         return []
 
-    lista_depositi_res = [Deposito(**row) for row in depositi_rows.mappings()]
+    lista_depositi_res = [Deposito(**row) for row in depositi_rows]
 
     if not lista_depositi_res:
         return []

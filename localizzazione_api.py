@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Query, HTTPException,Depends
 from business.permission import get_current_user
 from typing import Any, List
-from config.database import execute_query
+from config.database import fetch_list_by_query
 from models.models import Point2Area
 from repository.localizzazione_repo import prepared_statement_point2area
-from sqlalchemy import CursorResult
 import logging
 
 logger = logging.getLogger(__name__)
@@ -29,13 +28,13 @@ def get_area_from_point(
     query = prepared_statement_point2area()
     params = {"lat": lat, "lon": lon}
     
-    area_rows: CursorResult[Any] = execute_query(query, params)
+    area_rows: List[dict] | None = fetch_list_by_query(query, params)
 
-    if area_rows is None:
+    if area_rows is None or len(area_rows) == 0:
         logger.warning(f"Nessun risultato per le coordinate lat={lat}, lon={lon}.")
         raise HTTPException(status_code=404, detail="Nessuna area trovata per le coordinate fornite.")
 
-    result_list = [Point2Area(**row) for row in area_rows.mappings()]
+    result_list = [Point2Area(**row) for row in area_rows]
 
     if not result_list:
         logger.warning(f"Nessun risultato mappato per le coordinate lat={lat}, lon={lon}.")

@@ -1,6 +1,6 @@
 
 
-def check_user_db(username: str) -> bool:
+def check_user_db(username: str) -> str:
     """Query per il controllo dell'esistenza di un utente nel sistema"""
     return """SELECT u.id_user, u.name, u.email, sr.name AS role_name
     FROM util_ns.sys_users u 
