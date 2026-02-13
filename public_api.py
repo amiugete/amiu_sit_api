@@ -213,6 +213,7 @@ def lista_civici(
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
     id_municipio: Optional[int] = Query(None, description="Filtra per municipio"),
     id_via: Optional[int] = Query(None, description="Filtra per via"),
+    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
     payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /civici")
@@ -225,7 +226,7 @@ def lista_civici(
         offset = (page - 1) * size
         limit = size
     
-    params = {"id_municipio": id_municipio, "id_via": id_via}
+    params = {"id_municipio": id_municipio, "id_via": id_via, "ins_date": last_update}
     
     if limit is not None and offset is not None:
         query_select = prepared_statement_civici_with_count()

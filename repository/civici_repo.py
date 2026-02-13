@@ -27,6 +27,7 @@ def prepared_statement_civici() -> str:
           ) g on true
         where (:id_municipio is null or id_municipio = :id_municipio)
         and (:id_via is null or cc.cod_strada= :id_via)
+        and (:ins_date is null or cc.ins_date >= TO_DATE(:ins_date, 'YYYYMMDD'))
         order by id_municipio asc, v.nome asc, numero::int asc, lettera asc
         limit coalesce(:limit, 10000)
         offset coalesce(:offset,0)
@@ -59,6 +60,7 @@ def prepared_statement_civici_with_count()->str:
     ) g ON true
     WHERE (:id_municipio IS NULL OR id_municipio = :id_municipio)
       AND (:id_via IS NULL OR cc.cod_strada = :id_via)
+      AND (:ins_date IS NULL OR cc.ins_date >= TO_DATE(:ins_date, 'YYYYMMDD'))
     ORDER BY id_municipio ASC, v.nome ASC, numero::int ASC, lettera ASC
     LIMIT COALESCE(:limit, 10000)
     OFFSET COALESCE(:offset, 0)
@@ -67,6 +69,7 @@ SELECT (SELECT COUNT(*)
         FROM etl.civici_comune cc
         WHERE (:id_municipio IS NULL OR id_municipio = :id_municipio)
           AND (:id_via IS NULL OR cc.cod_strada = :id_via)
+          AND (:ins_date IS NULL OR cc.ins_date >= TO_DATE(:ins_date, 'YYYYMMDD'))
        ) AS total_count,
        data.*
 FROM data

@@ -146,7 +146,7 @@ I log del servizio sono disponibili nella cartella `logs`.
 
    **Autenticazione JWT:**
    ```env
-   SECRET_KEY=3;aIroI82#sPV0bDkh
+   SECRET_KEY=passwordsicura
    ACCESS_TOKEN_EXPIRE_MINUTES=60
    ```
    - `SECRET_KEY`: Stringa lunga e casuale usata per firmare i token.
@@ -202,8 +202,25 @@ Recupera la lista dei comuni.
 
 #### `GET /civici`
 Recupera la lista dei civici con filtri e paginazione.
-- **Parametri**: `page`, `size`, `id_municipio`, `id_via`.
-- **Autorizzazione**: Richiesto token JWT.
+
+- **Parametri**:
+  - `page`: Numero della pagina (opzionale, per paginazione)
+  - `size`: Dimensione della pagina (opzionale, per paginazione, max 100)
+  - `id_municipio`: Filtra per municipio (opzionale)
+  - `id_via`: Filtra per via (opzionale)
+  - `last_update`: Filtra per data di inserimento/aggiornamento civico, formato stringa `YYYYMMDD` (opzionale)
+    - Esempio: `last_update=20260101` filtra i civici inseriti/modificati dal 1 gennaio 2026 in poi
+- **Autorizzazione**: Richiesto token JWT
+
+Risposta:
+- Se vengono indicati `page` e `size`, la risposta è paginata e include il totale.
+- Se non vengono indicati, restituisce la lista completa (max 10.000 record).
+
+Esempio di richiesta:
+```
+GET /civici?page=1&size=50&id_municipio=2&id_via=123&last_update=20260101
+Authorization: Bearer <token>
+```
 
 #### `GET /quartieri`
 Recupera la lista dei quartieri.
