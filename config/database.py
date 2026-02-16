@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 import logging
 from typing import List, Optional
-from sqlalchemy.engine import Row
 
 # Carica le variabili dal file .env
 load_dotenv()
@@ -28,10 +27,19 @@ db_name_mappe = os.getenv("DB_NAME_MAPPE")
 DATABASE_URL = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db_name}"
 DATABASE_URL_MAPPE = f"postgresql+psycopg2://{user_mappe}:{password_mappe}@{host_mappe}:{port_mappe}/{db_name_mappe}"
 
-engine = create_engine(DATABASE_URL, echo=True)
-engine_mappe = create_engine(DATABASE_URL_MAPPE, echo=True)
+engine = create_engine(
+     DATABASE_URL,
+     echo=True,
+     pool_pre_ping=True,  # Verifica la connessione prima di usarla
+     pool_recycle=900    # Ricicla le connessioni ogni 15 minuti
+)
+engine_mappe = create_engine(
+     DATABASE_URL_MAPPE,
+     echo=True,
+     pool_pre_ping=True,
+     pool_recycle=900
+)
 logger = logging.getLogger(__name__)
-
 
 
 #################### Funzione di esecuzione query ########################

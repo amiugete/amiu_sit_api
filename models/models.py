@@ -174,6 +174,14 @@ class PosterioriPercorso(BaseModel):
     doppia_antenna: Optional[int] = None
     total_count: Optional[int] = None
 
+class MezzoEkovision(BaseModel):
+    id_scheda_ekovision: Optional[int] = None
+    data_esecuzione_prevista: Optional[str] = None
+    orario_esecuzione: Optional[str] = None
+    fascia_turno: Optional[str] = None
+    sportello: Optional[str] = None
+    total_count: Optional[int] = None    
+
 class PiazzolaAmiu(BaseModel):
     id_piazzola: Optional[int] = None
     via: Optional[str] = None

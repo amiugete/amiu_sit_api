@@ -273,6 +273,14 @@ Restituisce la lista degli elementi con paginazione e filtro data.
 - **Parametri**: `page`, `size`, `last_update`.
 - **Autorizzazione**: Richiesto token JWT.
 
+
+#### `GET /mezzi_ekovision`
+Restituisce la lista dei mezzi ekovision con paginazione e filtro per data di esecuzione prevista.
+- **Parametri**: 
+   - `check_date` (obbligatorio, formato `YYYYMMDD`): data di esecuzione prevista
+   - `page`, `size` (opzionali, per paginazione)
+- **Autorizzazione**: Richiesto token JWT.
+
 #### `GET /itinerari_p`
 Restituisce la lista degli itinerari dei percorsi posteriori con paginazione e filtro data.
 - **Parametri**: `page`, `size`, `last_update`.

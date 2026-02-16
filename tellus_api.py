@@ -2,19 +2,26 @@ from fastapi import APIRouter, Query,Depends
 from business.permission import get_current_user
 from typing import Any, List, Optional, Union
 from config.database import fetch_list_by_query
-from models.models import  Deposito, ElementoAmiu, ItinerarioPercorsoPsteriore, PaginatedResponse, PiazzolaAmiu, PosterioriPercorso
+from models.models import  Deposito, ElementoAmiu,MezzoEkovision, ItinerarioPercorsoPsteriore, PaginatedResponse, PiazzolaAmiu, PosterioriPercorso
 from repository.depositi_repo import prepared_statement_depositi
 from repository.elementi_amiu_repo import prepared_statement_elementi_amiu
 from repository.itinerari_percorsi_posteriori import prepared_statement_percorsi_posteriori_aggiornata
 from repository.piazzole_amiu_repo import prepared_statement_piazzole_amiu
 from repository.posteriori_repo import prepared_statement_posteriori_with_count
-from sqlalchemy import CursorResult
+from repository.mezzi_ekovision_repo import prepared_statement_mezzi_ekovision
 import logging
 
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Servizi TELLUS"])
+
+
+# In questo router sono definite delle api che restituiscono dati geografici di vario tipo (comuni, vie, piazzole, civici, quartieri, ambiti, municipi, point of interest) con filtri opzionali e paginazione. Tutti questi endpoint richiedono autenticazione tramite Bearer Token e verificano i permessi dell'utente prima di restituire i dati.
+# I servizi che restituiscono i dati in un oggetto di tipo PaginatedResponse sono quelli che possono potenzialmente restituire liste molto grandi di risultati, mentre quelli che restituiscono i dati in formato JSON sono quelli che restituiscono liste più piccole di risultati quasi identici agli oggetti restituiti da ws_amiugis.
+# I modelli dei dati response e request sono definiti in models/models.py e i prepared statement per le query al database sono definiti nei repository corrispondenti alla tipologia di dato restituito (es. repository/vie_repo.py per le vie, repository/piazzole_repo.py per le piazzole, ecc.).
+
+# nel main richiamerò questi router e li inizializzo
 
 @router.get(
     "/percorsi_p",
@@ -192,6 +199,48 @@ def lista_itinerari_p(
     
 
     return lista_itinerari
+
+@router.get(
+    "/mezzi_ekovision",
+    response_model=Union[List[MezzoEkovision], PaginatedResponse[MezzoEkovision]],
+    description="Restituisce la lista dei mezzi ekovision. Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. È possibile filtrare anche per data di esecuzione prevista (formato YYYYMMDD). Richiede autenticazione (Bearer Token)."
+)
+def lista_mezzi_ekovision(
+    check_date: str = Query(..., description="Filtra per data di esecuzione prevista in formato YYYYMMDD",pattern=r"^\d{8}$"),
+    page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
+    size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
+    payload: dict[str, Any] = Depends(get_current_user)
+):
+    logger.info("Ricevuta richiesta GET /mezzi_ekovision")
+    mezzi_row: List[dict] | None
+    offset = 0
+    limit = 1000
+
+    if page is not None and size is not None and size > 0 and page > 0:
+        offset = (page - 1) * size
+        limit = size
+
+
+    query_select = prepared_statement_mezzi_ekovision()
+    mezzi_row = fetch_list_by_query(query_select, {"check_date": check_date,"limit": limit, "offset": offset})
+
+    if mezzi_row is None or len(mezzi_row) == 0:
+            logger.info("Nessun risultato ottenuto dalla query.")
+            return []
+
+    ## Creazione della lista dei mezzi ekovision
+    lista_mezzi = [MezzoEkovision(**row) for row in mezzi_row]
+
+    if page is not None and size is not None and size > 0 and page > 0:
+        result = PaginatedResponse[MezzoEkovision]()
+        result.total = lista_mezzi[0].total_count
+        result.content = lista_mezzi
+        result.page = page
+        result.size = size
+        result.pages = (result.total + size - 1) // size if size else 0
+        return result
+
+    return lista_mezzi
 
 
 @router.get(
