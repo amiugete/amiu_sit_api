@@ -22,7 +22,7 @@ load_dotenv()
 log_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 log_dir = "logs"
 os.makedirs(log_dir, exist_ok=True)
-today_str = datetime.now().strftime("%Y%m%d")
+today_str = datetime.now().strftime("%Y_%m_%d")
 log_filename = f"{log_dir}/app_{today_str}.log"
 
 log_handler = logging.FileHandler(log_filename, encoding="utf-8")
