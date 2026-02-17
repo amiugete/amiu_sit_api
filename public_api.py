@@ -2,9 +2,10 @@ from fastapi import APIRouter, Query, HTTPException,Depends
 from business.permission import get_current_user
 from typing import Any, List, Optional, Union
 from enum import Enum
-from config.database import fetch_list_by_query,fetch_list_by_query_mappe
-from models.models import LayerFilterResponse, Mappa, Municipio, Piazzola, PaginatedResponse, Via, Comune, Civico, Quartiere, Ambito, PointOfInterest
+from config.database import fetch_list_by_query,fetch_list_by_query_mappe, fetch_list_by_query_strade
+from models.models import LayerFilterResponse, MacroCategoria, Mappa, Municipio, Piazzola, PaginatedResponse, Via, Comune, Civico, Quartiere, Ambito, PointOfInterest
 from repository.layer_filter_repo import get_layer_filter_query
+from repository.macro_categorie_repo import prepared_statement_macro_categorie
 from repository.municipi_repo import prepared_statement_municipi_genova
 from repository.vie_repo import prepared_statement_vie, prepared_statement_vie_with_count
 from repository.piazzole_repo import prepared_statement_piazzole, prepared_statement_piazzole_with_count
@@ -42,12 +43,27 @@ def mappe(
     listaMappe = [Mappa(**row) for row in listaMappe]
     logger.info(f"Restituite {len(listaMappe)} mappe.")
     return listaMappe
+
+# Endpoint per il recupero dei layer filtrati in base a titolo mappa, livello e nome
+@router.get("/macro_categorie", description="Recupera le macro categorie disponibili. Richiede autenticazione (Bearer Token).")
+def macro_categorie(
+    payload: dict[str, Any] = Depends(get_current_user)
+):
+    logger.info("Ricevuta richiesta GET /macro_categorie")
+    query_select = prepared_statement_macro_categorie()
+    listaMacroCategorie = fetch_list_by_query_strade(query_select, {})
+    if listaMacroCategorie is None or len(listaMacroCategorie) == 0:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+    listaMacroCategorie = [MacroCategoria(**row) for row in listaMacroCategorie]
+    logger.info(f"Restituite {len(listaMacroCategorie)} macro categorie.")
+    return listaMacroCategorie
+
+
 class LivelloFiltro(str, Enum):
     ambito = "ambito"
     comune = "comune"
     municipio = "municipio"
-
-
 
 @router.get(
     "/layer_filter",

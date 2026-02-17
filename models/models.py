@@ -180,7 +180,14 @@ class MezzoEkovision(BaseModel):
     orario_esecuzione: Optional[str] = None
     fascia_turno: Optional[str] = None
     sportello: Optional[str] = None
-    total_count: Optional[int] = None    
+    total_count: Optional[int] = None
+
+class MacroCategoria(BaseModel):
+    classificazione: Optional[str] = None
+    categoria: Optional[int] = None
+    descr_categoria: Optional[str] = None
+    utilizzo: Optional[int] = None
+    descr_utilizzo: Optional[str] = None
 
 class PiazzolaAmiu(BaseModel):
     id_piazzola: Optional[int] = None
