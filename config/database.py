@@ -42,6 +42,7 @@ DATABASE_URL = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db_name}
 DATABASE_URL_MAPPE = f"postgresql+psycopg2://{user_mappe}:{password_mappe}@{host_mappe}:{port_mappe}/{db_name_mappe}"
 
 ################# Strnga di connessione base dati Strade ##########################
+
 DATABASE_URL_STRADE = f"oracle+oracledb://{user_oracle}:{password_oracle}@{host_oracle}:{port_oracle}/{db_name_oracle}"
 
 

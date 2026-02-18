@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Query, HTTPException,Depends
+from pydantic_geojson import FeatureModel, LineStringModel
 from business.permission import get_current_user
 from typing import Any, List, Optional, Union
 from enum import Enum
 from config.database import fetch_list_by_query,fetch_list_by_query_mappe, fetch_list_by_query_strade
-from models.models import LayerFilterResponse, MacroCategoria, Mappa, Municipio, Piazzola, PaginatedResponse, Via, Comune, Civico, Quartiere, Ambito, PointOfInterest
+from models.models import  GeoJSNONModel,LayerFilterResponse, MacroCategoria, Mappa, Municipio, MyFutureModel, Piazzola, PaginatedResponse, PaginatedGeoJSONResponse, Via, Comune, Civico, Quartiere, Ambito, PointOfInterest
 from repository.layer_filter_repo import get_layer_filter_query
 from repository.macro_categorie_repo import prepared_statement_macro_categorie
 from repository.municipi_repo import prepared_statement_municipi_genova
@@ -14,9 +15,11 @@ from repository.civici_repo import prepared_statement_civici_with_count, prepare
 from repository.quartieri_repo import prepared_statement_quartieri
 from repository.ambiti_repo import prepared_statement_ambiti
 from repository.mappe_repo import prepared_statement_mappe
+from repository.aste_repo_geoloc import prepared_statement_aste_geoloc
 from repository.point_of_interest_repo import prepared_statement_pointofinterest
 from sqlalchemy import CursorResult
 import logging
+
 
 
 logger = logging.getLogger(__name__)
@@ -166,7 +169,7 @@ def lista_vie(
     offset = None
     limit = None 
 
-    if page is not None and size is not None and size > 0:     
+    if page is not None and size is not None and size > 0:
         offset = (page - 1) * size
         limit = size
 
@@ -326,7 +329,7 @@ def lista_municipi(
 
 @router.get("/POI", response_model=List[PointOfInterest], description="Recupera i dettagli dei Punti di Interesse (Rimesse, UT e Scarichi vari). Richiede autenticazione (Bearer Token).")
 def lista_point_of_interest(
-    payload: dict[str, Any] = Depends(get_current_user)
+        payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /point of interest")
     query_select = prepared_statement_pointofinterest()
@@ -337,6 +340,79 @@ def lista_point_of_interest(
     listPointOfInterest = [PointOfInterest(**row) for row in listPointOfInterest]
     logger.info(f"Restituiti {len(listPointOfInterest)} point of interest.")
     return listPointOfInterest
+
+@router.get(
+    "/aste",
+    response_model=PaginatedGeoJSONResponse,
+    description="Recupera le ASTE in formato GeoJSON con paginazione. Richiede autenticazione (Bearer Token)."
+)
+def lista_aste(
+    page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
+    size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
+    id_via: Optional[int] = Query(None, description="Filtra per ID via"),
+    id_municipio: Optional[int] = Query(None, description="Filtra per ID municipio"),
+    last_update: Optional[str] = Query(None, description="Filtra per data di ultima modifica (YYYYMMDD)"),
+    payload: dict[str, Any] = Depends(get_current_user)
+):
+    logger.info("Ricevuta richiesta GET /aste")
+    offset = 0
+    limit = 1000
+
+    if page is not None and size is not None and size > 0 and page > 0:
+        offset = (page - 1) * size
+        limit = size
+
+    params = {"limit": limit, "offset": offset, "last_update": last_update, "id_via": id_via, "id_municipio": id_municipio}
+    query_aste = prepared_statement_aste_geoloc()
+    listAste = fetch_list_by_query(query_aste, params)
+    total = 0
+    if listAste is None or len(listAste) == 0:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        paginated = PaginatedGeoJSONResponse(
+            total=0,
+            page=page,
+            size=size,
+            pages=0,
+            content=GeoJSNONModel(type="FeatureCollection", features=[])
+        )
+        return paginated
+    # Se la query restituisce il conteggio totale (come per le vie), usalo, altrimenti calcola da len
+    if "total_count" in listAste[0]:
+        total = listAste[0]["total_count"]
+    
+
+
+    features = []
+
+    for row in listAste:
+        features.append(
+        MyFutureModel(
+            properties={
+                "id_asta": row["id_asta"],
+                "id_via": row["id_via"],
+                "last_update": row["last_update"],
+                "lung_db_m": row["lung_db_m"],
+                "transitabilita": row["transitabilita"],
+                "nome_via": row["nome_via"],
+                "id_quartiere": row["id_quartiere"],
+                "id_municipio": row["id_municipio"]
+            },
+            geometry=row["geometry"]
+        ))
+    
+    geo_json = GeoJSNONModel(type="FeatureCollection", features=features)
+    paginated = PaginatedGeoJSONResponse(
+        total=total,
+        page=page,
+        size=size,
+        pages=(total + size - 1) // size if size else 0,
+        content=geo_json
+    )
+
+    return paginated
+    
+
+
 
 
 

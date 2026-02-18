@@ -1,8 +1,10 @@
 
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic_geojson import LineStringModel
 from typing import Optional, Any, TypeVar, Generic
 from datetime import datetime
+from shapely import wkb
+from decimal import Decimal
 
 T = TypeVar('T')
 
@@ -11,6 +13,13 @@ class MyBaseModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+
+class PaginatedGeoJSONResponse(MyBaseModel):
+    total: Optional[int] = None  # Numero totale di feature
+    page: Optional[int] = None   # Pagina corrente
+    size: Optional[int] = None   # Dimensione della pagina
+    pages: Optional[int] = None  # Numero totale di pagine
+    content: Optional[GeoJSNONModel] = None  # Oggetto GeoJSON paginato
 
 class PaginatedResponse(MyBaseModel, Generic[T]):
     total: Optional[int] = None # length of all items
@@ -82,7 +91,7 @@ class Quartiere(MyBaseModel):
     id_comune: int
     descrizione: str
 
-class Municipio(BaseModel):
+class Municipio(MyBaseModel):
     id_municipio: int
     id_comune: int
     descrizione: str
@@ -269,7 +278,46 @@ class PercorsoDettaglio(BaseModel):
     tipo_elem: Optional[str]
     num: Optional[int]
 
-class UserRoles(MyBaseModel):
+
+class GeoJSNONModel(BaseModel):
+    type: str = 'Feature'
+    features: list[MyFutureModel] = []
+
+class MyFutureModel(BaseModel):
+    type: str = 'FeatureCollection'
+    properties: Optional[T] = None
+    geometry: Optional[Geometry] = None
+    @field_validator("geometry", mode="before")
+    @classmethod
+    def parse_geometry(cls, v):
+        if v is None:
+            return None
+        # Se arriva come stringa esadecimale
+        elif isinstance(v, str):
+            v = v.strip()
+            # Se è una stringa JSON GeoJSON
+            if v.startswith('{'):
+                import json
+                geojson = json.loads(v)
+                if geojson.get("type") == "LineString" and "coordinates" in geojson:
+                        coords = [[x, y] for x, y in geojson["coordinates"]]
+                        return Geometry(type="LineString", coordinates=coords)
+                else:
+                    raise ValueError("GeoJSON non valido")
+            else:
+                # Altrimenti si assume sia esadecimale WKB
+                geom = wkb.loads(bytes.fromhex(v))
+                coords = [[x, y] for x, y in geom.coords]
+                return Geometry(type="LineString", coordinates=coords)
+        else:
+            raise ValueError("Formato geometry non supportato")
+
+
+class Geometry(BaseModel):
+        type: str
+        coordinates: list[list[float]]
+
+class UserRoles(BaseModel):
     id_user: int
     utenze: Optional[bool] = None
     amministratore: Optional[bool] = None
