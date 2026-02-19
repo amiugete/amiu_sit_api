@@ -8,32 +8,26 @@ import json
 
 T = TypeVar('T')
 
-# 1. Definisci una classe base con la configurazione desiderata
-class MyBaseModel(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-
-
-class PaginatedGeoJSONResponse(MyBaseModel):
+class PaginatedGeoJSONResponse(BaseModel):
     total: Optional[int] = None  # Numero totale di feature
     page: Optional[int] = None   # Pagina corrente
     size: Optional[int] = None   # Dimensione della pagina
     pages: Optional[int] = None  # Numero totale di pagine
     content: Optional[GeoJSNONModel] = None  # Oggetto GeoJSON paginato
 
-class PaginatedResponse(MyBaseModel, Generic[T]):
+class PaginatedResponse(BaseModel, Generic[T]):
     total: Optional[int] = None # length of all items
     page: Optional[int] = None #current page -> OFFSET = (page - 1) * size = ?
     size: Optional[int] = None # limit
     pages: Optional[int] = None #toltal pages total/size
     content: list[T] = []
 
-class Percorso(MyBaseModel):
+class Percorso(BaseModel):
     idpercorso: int
     descrizione: str
 
 
-class Piazzola(MyBaseModel):
+class Piazzola(BaseModel):
     id_piazzola: int
     id_via: int
     via: str
@@ -52,13 +46,13 @@ class Piazzola(MyBaseModel):
     total_count: Optional[int] = None
 
 
-class Via(MyBaseModel):
+class Via(BaseModel):
     id_via: int
     nome: str
     id_comune: int
     total_count: Optional[int] = None
 
-class Comune(MyBaseModel):
+class Comune(BaseModel):
     id_comune: int
     descr_comune: str
     descr_provincia: str
@@ -67,7 +61,7 @@ class Comune(MyBaseModel):
     cod_istat: str
 
 
-class Civico(MyBaseModel):
+class Civico(BaseModel):
     cod_civico: str
     numero: int
     lettera: Optional[str] = None
@@ -85,24 +79,24 @@ class Civico(MyBaseModel):
     total_count: Optional[int] = None
 
 
-class Quartiere(MyBaseModel):
+class Quartiere(BaseModel):
     id_quartiere: int
     id_municipio: Optional[int] = None
     id_comune: int
     descrizione: str
 
-class Municipio(MyBaseModel):
+class Municipio(BaseModel):
     id_municipio: int
     id_comune: int
     descrizione: str
 
 
-class Ambito(MyBaseModel):
+class Ambito(BaseModel):
     id_ambito: int
     descr_ambito: str
 
 
-class PointOfInterest(MyBaseModel):
+class PointOfInterest(BaseModel):
     id: int
     via: str
     numero_civico: Optional[str] = None
@@ -113,18 +107,18 @@ class PointOfInterest(MyBaseModel):
     tipo: str 
 
 
-class User(MyBaseModel):
+class User(BaseModel):
     id_user: int
     name: str
     role_name: str 
     email: Optional[str] = None
     
 
-class Mappa(MyBaseModel):
+class Mappa(BaseModel):
     titolo: str
     descrizione: str
 
-class Utenza(MyBaseModel):
+class Utenza(BaseModel):
     id_utenza: str
     codice_immobile: Optional[int] = None
     cod_interno: Optional[str] = None
@@ -147,7 +141,7 @@ class Utenza(MyBaseModel):
     totale_record: Optional[int] = None
 
 
-class Bilaterali_albero(MyBaseModel):
+class Bilaterali_albero(BaseModel):
     id_area: Optional[int] = None
     descrizione : Optional[str] = None
     id_padre:Optional[int] = None
@@ -211,7 +205,7 @@ class PiazzolaAmiu(BaseModel):
     data_ultima_modifica: Optional[str] = None
     total_count: Optional[int] = None
 
-class ElementoAmiu(MyBaseModel):
+class ElementoAmiu(BaseModel):
     id_elemento: int
     id_piazzola: Optional[int]
     id_tipo_elemento: Optional[int]
@@ -241,7 +235,7 @@ class ItinerarioPercorsoPsteriore(BaseModel):
         data_ultima_modifica: Optional[str] = None
         total_count: Optional[int] = None
 
-class Deposito(MyBaseModel):
+class Deposito(BaseModel):
     id_ut: int
     descrizione: str
     long: float
@@ -253,7 +247,7 @@ class Deposito(MyBaseModel):
     total_count: Optional[int] = None
 
 
-class Point2Area(MyBaseModel):
+class Point2Area(BaseModel):
     id_ambito: int
     ambito: str
     id_comune: int
@@ -280,11 +274,11 @@ class PercorsoDettaglio(BaseModel):
 
 
 class GeoJSNONModel(BaseModel):
-    type: str = 'Feature'
+    type: str = 'FeatureCollection'
     features: list[MyFutureModel] = []
 
 class MyFutureModel(BaseModel):
-    type: str = 'FeatureCollection'
+    type: str = 'Feature'
     properties: Optional[T] = None
     geometry: Optional[Geometry] = None
     @field_validator("geometry", mode="before")
@@ -332,7 +326,7 @@ class UserRoles(BaseModel):
         return roles
 
 
-class LayerFilterResponse(MyBaseModel):
+class LayerFilterResponse(BaseModel):
     url: str
     repository: str
     project: str

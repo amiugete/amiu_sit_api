@@ -5,6 +5,7 @@ def prepared_statement_aste_geoloc() -> str:
     return  """
             SELECT id_asta, id_via, id_quartiere, id_circoscrizione as id_municipio,
               lung_asta as lung_db_m,
+              round(st_length(geoloc)) as lungh_geom_m,
               transitabilita, nome_via,
               TO_CHAR(data_ultima_modifica, 'YYYYMMDD') AS last_update,
               ST_AsGeoJSON(ST_Transform(geoloc, 4326)) AS geometry,

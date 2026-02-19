@@ -383,6 +383,7 @@ def lista_aste(
     features = []
 
     for row in listAste:
+        # La query restituisce la geometria che verrà mappata nella classe MyFutureModel come LineStringModel grazie al parsing definito nel modello. Gli altri campi vengono mappati nelle proprietà del feature model.
         features.append(
         MyFutureModel(
             properties={
@@ -391,6 +392,7 @@ def lista_aste(
                 "last_update": row["last_update"],
                 "lung_db_m": row["lung_db_m"],
                 "transitabilita": row["transitabilita"],
+                "lungh_geom_m": row["lungh_geom_m"],
                 "nome_via": row["nome_via"],
                 "id_quartiere": row["id_quartiere"],
                 "id_municipio": row["id_municipio"]
