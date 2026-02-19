@@ -4,7 +4,7 @@ from pydantic_geojson import LineStringModel
 from typing import Optional, Any, TypeVar, Generic
 from datetime import datetime
 from shapely import wkb
-from decimal import Decimal
+import json
 
 T = TypeVar('T')
 
@@ -292,12 +292,11 @@ class MyFutureModel(BaseModel):
     def parse_geometry(cls, v):
         if v is None:
             return None
-        # Se arriva come stringa esadecimale
+        # il dato arriva già in formato LineString
         elif isinstance(v, str):
             v = v.strip()
             # Se è una stringa JSON GeoJSON
             if v.startswith('{'):
-                import json
                 geojson = json.loads(v)
                 if geojson.get("type") == "LineString" and "coordinates" in geojson:
                         coords = [[x, y] for x, y in geojson["coordinates"]]

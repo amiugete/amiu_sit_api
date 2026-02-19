@@ -128,20 +128,20 @@ I log del servizio sono disponibili nella cartella `logs`.
 
    **Database SIT:**
    ```env
-   DB_USER=webgis
-   DB_PASSWORD=qgisisN1ce
-   DB_HOST=172.24.4.39
+   DB_USER=user
+   DB_PASSWORD=pwdsicura
+   DB_HOST=111.111.1.11
    DB_PORT=5432
    DB_NAME=sit_test
    ```
 
    **Database Mappe (per WS mappe duale):**
    ```env
-   DB_HOST_MAPPE=amiugis
+   DB_HOST_MAPPE=111.111.1.11
    DB_PORT_MAPPE=5432
-   DB_NAME_MAPPE=api_db
-   DB_USER_MAPPE=api
-   DB_PASSWORD_MAPPE=4pi1sN1ce
+   DB_NAME_MAPPE=jj
+   DB_USER_MAPPE=mm
+   DB_PASSWORD_MAPPE=pwdsicura
    ```
 
    **Autenticazione JWT:**
@@ -154,7 +154,7 @@ I log del servizio sono disponibili nella cartella `logs`.
 
    **LDAP AMIU:**
    ```env
-   HOST_AMIU_LDAP=172.24.4.1
+   HOST_AMIU_LDAP=host.amiu
    DOMAIN_NAME_AMIU=amiu.genova.it
    ```
 
@@ -184,6 +184,23 @@ Questi endpoint richiedono autenticazione tramite Bearer Token (JWT).
 #### `GET /mappe`
 Recupera le mappe disponibili.
 - **Autorizzazione**: Richiesto token JWT.
+
+#### `GET /aste`
+Recupera le aste in formato GeoJSON con paginazione.
+- **Parametri**:
+   - `page`: Numero della pagina (opzionale, per paginazione)
+   - `size`: Dimensione della pagina (opzionale, per paginazione, max 100)
+   - `id_via`: Filtra per ID via (opzionale)
+   - `id_municipio`: Filtra per ID municipio (opzionale)
+   - `last_update`: Filtra per data di ultima modifica, formato `YYYYMMDD` (opzionale)
+- **Autorizzazione**: Richiesto token JWT.
+- **Risposta**: Oggetto paginato in formato GeoJSON con proprietà delle aste e geometrie.
+
+Esempio di richiesta:
+```
+GET /aste?page=1&size=50&id_municipio=2&id_via=123&last_update=20260101
+Authorization: Bearer <token>
+```
 
 #### `GET /piazzole`
 Recupera la lista delle piazzole con filtri e paginazione.

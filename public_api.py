@@ -376,11 +376,9 @@ def lista_aste(
             content=GeoJSNONModel(type="FeatureCollection", features=[])
         )
         return paginated
-    # Se la query restituisce il conteggio totale (come per le vie), usalo, altrimenti calcola da len
+    # Se la query restituisce il conteggio totale 
     if "total_count" in listAste[0]:
         total = listAste[0]["total_count"]
-    
-
 
     features = []
 
