@@ -105,9 +105,9 @@ def get_layer_filter(
 def lista_piazzole(
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
-    comune: Optional[int] = Query(None, description="Filtra per comune"),
-    municipio: Optional[int] = Query(None, description="Filtra per municipio"),
-    via: Optional[int] = Query(None, description="Filtra per ID della via"),
+    id_comune: Optional[int] = Query(None, description="Filtra per comune"),
+    id_municipio: Optional[int] = Query(None, description="Filtra per municipio"),
+    id_via: Optional[int] = Query(None, description="Filtra per ID della via"),
     pap: Optional[int] = Query(None, ge=0, le=1, description="Filtra per PAP (1 = Sì, 0 = No)"),
     payload: dict[str, Any] = Depends(get_current_user)
 ):
@@ -121,7 +121,7 @@ def lista_piazzole(
         offset = (page - 1) * size
         limit = size
 
-    params = {"pap": pap, "via": via, "comune": comune, "municipio": municipio}
+    params = {"pap": pap, "via": id_via, "comune": id_comune, "municipio": id_municipio}
 
     # Query per il ritorno del risultato paginato
     if limit is not None and offset is not None:
@@ -160,7 +160,7 @@ def lista_piazzole(
 def lista_vie(
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
-    comune: Optional[int] = Query(None, description="Filtra per comune"),
+    id_comune: Optional[int] = Query(None, description="Filtra per comune"),
     payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /vie")
@@ -173,7 +173,7 @@ def lista_vie(
         offset = (page - 1) * size
         limit = size
 
-    params = {"comune": comune}
+    params = {"comune": id_comune}
 
     if limit is not None and offset is not None:
         query_select = prepared_statement_vie_with_count()
@@ -343,7 +343,7 @@ def lista_point_of_interest(
 
 @router.get(
     "/aste",
-    response_model=PaginatedGeoJSONResponse,
+    response_model=GeoJSNONModel,
     description="Recupera le ASTE in formato GeoJSON con paginazione. Richiede autenticazione (Bearer Token)."
 )
 def lista_aste(
@@ -400,18 +400,9 @@ def lista_aste(
             geometry=row["geometry"]
         ))
     
-    geo_json = GeoJSNONModel(type="FeatureCollection", features=features)
-    paginated = PaginatedGeoJSONResponse(
-        total=total,
-        page=page,
-        size=size,
-        pages=(total + size - 1) // size if size else 0,
-        content=geo_json
-    )
+    return GeoJSNONModel(type="FeatureCollection", features=features, total=total, page=page, size=size, pages=(total + size - 1) // size if size else 0)
 
-    return paginated
     
-
 
 
 

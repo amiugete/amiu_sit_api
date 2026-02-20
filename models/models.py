@@ -276,6 +276,11 @@ class PercorsoDettaglio(BaseModel):
 class GeoJSNONModel(BaseModel):
     type: str = 'FeatureCollection'
     features: list[MyFutureModel] = []
+    total: Optional[int] = None
+    page: Optional[int] = None
+    size: Optional[int] = None
+    pages: Optional[int] = None
+
 
 class MyFutureModel(BaseModel):
     type: str = 'Feature'
