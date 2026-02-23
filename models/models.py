@@ -5,6 +5,7 @@ from typing import Optional, Any, TypeVar, Generic
 from datetime import datetime
 from shapely import wkb
 import json
+from zoneinfo import ZoneInfo
 
 T = TypeVar('T')
 
@@ -314,6 +315,17 @@ class MyFutureModel(BaseModel):
 class Geometry(BaseModel):
         type: str
         coordinates: list[list[float]]
+
+
+
+
+class SecurityLog(BaseModel):
+    ip_address: str
+    attempts: int
+    ban_count: int
+    last_failure: Optional[datetime] = None
+    blocked_until: Optional[datetime] = None
+
 
 class UserRoles(BaseModel):
     id_user: int

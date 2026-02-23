@@ -1,13 +1,21 @@
-from fastapi import APIRouter, Form, HTTPException, status #, Query, Depends
-from config.database import fetch_one_by_query
-from models.models import User,UserRoles
+from fastapi import APIRouter, Form, HTTPException, status,Request #, Query, Depends
+from config.database import fetch_one_by_query,init_security_db,get_security_connection
+from models.models import User,UserRoles,SecurityLog
 from repository.users_repo import check_user_db, get_user_roles
+from repository.security_repo import update_attempts0_block_30min,update_attempts0_block_24h, update_attempts0_block_permanent, get_security_log_by_ip,insert_security_log,update_attempts_only,reset_attempts_and_ban_count
 import logging
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm, HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
 from config.ldap_amiu import verifica_utente_amiu_LDAP
 from config.jwt_token_config import create_access_token
+import sqlite3
+import os
+from dotenv import load_dotenv
+from datetime import datetime
+from zoneinfo import ZoneInfo
+from typing import Optional
 
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -17,79 +25,122 @@ bearer_scheme = HTTPBearer()
 
 router = APIRouter()
 
-################################ SERVIZIO COMMENTATO COMPRENSIVO DELL'OGGETTO PROGETTATO PER IL GRANT TYPE CHE CONTIENE ANCHE SCOPE CLIENT_ID CHE AL MOMENTO NON SERVONO ##########################################
-# @router.post("/token", description="Genera un token JWT per autenticare")
-# async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-#     """Endpoint per l'autenticazione e la generazione del token JWT"""
-#     username = form_data.username
-#     password = form_data.password
-#     logger.info(f"Ricevuta richiesta di login per l'utente {username}")
+def get_client_ip(request: Request):
+    # Prova a prendere l'IP passatoci dal Proxy
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0]  # Prendi il primo IP della lista
+    return request.client.host
 
-#     ## Verifica lDAP#####################
-#     is_authenticated, msg = verifica_utente_amiu_LDAP(username, password)
-#     if not is_authenticated:
-#         logger.warning(f"Autenticazione fallita per l'utente {username}: {msg}")
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="Credenziali non valide",
-#             headers={"WWW-Authenticate": "Bearer"},
-#         )
-#     ############### VErifica presenza utente nel database #######################
-#     user_query = check_user_db(username)
+def select_security_log_by_ip(conn: sqlite3.Connection, ip: str) -> Optional[SecurityLog]:
+    """Controlla se esiste un record di sicurezza per l'IP specificato e restituisce un oggetto SecurityLog o None."""
+    cursor = conn.cursor()
+    cursor.execute(get_security_log_by_ip(), {"ip_address": ip})
+    row = cursor.fetchone()
+    if row:
+        return SecurityLog(**row)
+    return None
 
-#     try:
-#         user_record = fetch_one_by_query(user_query, {"name": username})
-#         if not user_record:
-#             logger.warning(f"Utente {username} non trovato nel database.")
-#             raise HTTPException(
-#                 status_code=status.HTTP_401_UNAUTHORIZED,
-#                 detail="Utente non trovato",
-#                 headers={"WWW-Authenticate": "Bearer"},
-#             )
-#     except Exception as e:
-#         logger.error(f"Errore durante la verifica dell'utente {username} nel database: {e}")
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="Errore utente non trovato",
-#         )    
+def insert_security_log_for_ip(conn: sqlite3.Connection, ip: str):
+    """Inserisce un nuovo record di sicurezza per l'IP specificato con attempts=0 e ban_count=0."""
+    cursor = conn.cursor()
+    cursor.execute(insert_security_log(), {"ip_address": ip})
+    conn.commit()
 
-    
-#     # Creazione dell'oggetto User con i dati recuperati dal database per inserimento parametri nel token JWT
-#     user = User(**user_record)
+def reset_log_security(conn: sqlite3.Connection, ip: str):
+        cursor = conn.cursor()
+        cursor.execute(reset_attempts_and_ban_count(), {"ip_address": ip})
+        conn.commit()
 
-#     # Una volta ottenuto l'utente verifico se ha il permesso per l'utenze e lo aggiungo al token come parametro per poterlo utilizzare nei servizi che richiedono questo permesso specifico####
-#     # Per eventuali futuri permessi, si potrebbe implementare una logica simile per aggiungere altri parametri al token in base ai permessi dell'utente, in modo da avere un token più ricco di informazioni sui privilegi dell'utente.
-#     user_roles_query = get_user_roles()
-#     utente_role = fetch_one_by_query(user_roles_query, {"id_user": user.id_user})
-#     utente_role = UserRoles(**utente_role) if utente_role else None
-#     utenze_param = {"utenze": utente_role.utenze if utente_role is not None and utente_role.utenze else False}
-#     ########################################################
-#     try:
-#         access_token = create_access_token(data={"sub": username, "user_id": user.id_user, "email": user.email, "role": user.role_name,**utenze_param})
-#         logger.info(f"Utente {username} autenticato con successo.")
-#     except Exception as e:
-#         logger.error(f"Errore durante la creazione del token per l'utente {username}: {e}")
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="Utente non autorizzato",
-#             headers={"WWW-Authenticate": "Bearer"},
-#         )
-#     return {"access_token": access_token, "token_type": "bearer"}
+def manage_security_log_on_failure(securityLog_record: SecurityLog, conn: sqlite3.Connection):
+    """
+    Gestisce il log di sicurezza in caso di fallimento dell'autenticazione, implementando un sistema di blocco progressivo:
+    - Se attempts < 3: incrementa solo il contatore dei tentativi falliti (attempts).
+    - Se attempts == 3 e ban_count == 0: blocca l'IP per 30 minuti (primo blocco temporaneo).
+    - Se attempts == 3 e ban_count == 1: blocca l'IP per 24 ore (secondo blocco temporaneo).
+    - Se attempts == 3 e ban_count >= 2: blocco permanente (imposta una data molto lontana).
+    Dopo ogni blocco, il contatore attempts viene azzerato e ban_count incrementato.
+    """
+    cursor = conn.cursor()
+    if securityLog_record:
+        # Caso: meno di 3 tentativi falliti, solo incremento del contatore
+        if securityLog_record.attempts < 3:
+            new_attempts = securityLog_record.attempts + 1
+            cursor.execute(update_attempts_only(), {"attempts": new_attempts, "ip_address": securityLog_record.ip_address})
+            conn.commit()
+        # Caso: 3 tentativi falliti, primo blocco temporaneo di 30 minuti
+        elif securityLog_record.attempts == 3 and securityLog_record.ban_count == 0:
+            cursor.execute(update_attempts0_block_30min(), { "ip_address": securityLog_record.ip_address})
+            conn.commit()
+        # Caso: 3 tentativi falliti, secondo blocco temporaneo di 24 ore
+        elif securityLog_record.attempts == 3 and securityLog_record.ban_count == 1:
+            cursor.execute(update_attempts0_block_24h(), {"ip_address": securityLog_record.ip_address})
+            conn.commit()
+        # Caso: 3 tentativi falliti, blocco permanente
+        elif securityLog_record.attempts == 3 and securityLog_record.ban_count >= 2:
+            cursor.execute(update_attempts0_block_permanent(), {"ip_address": securityLog_record.ip_address})
+            conn.commit()
+
 
 @router.post("/token", description="Genera un token JWT per autenticare")
-async def login( username: str = Form(...), password: str = Form(...)):
+async def login( request: Request,username: str = Form(...), password: str = Form(...)):
     """Endpoint per l'autenticazione e la generazione del token JWT"""
-    logger.info(f"Ricevuta richiesta di login per l'utente {username}")
+    # 1. Recupera l'IP del client
+    ip = get_client_ip(request)
 
-    ## Verifica lDAP#####################
+    # tabella security_logs inizializzata se non esiste già
+    init_security_db()
+
+    connection = get_security_connection()
+    connection.row_factory = sqlite3.Row
+
+    # Recupera il record per questo IP dalla tabella security_logs se presente
+    security_log : Optional[SecurityLog] = select_security_log_by_ip(connection, ip)
+
+    # Se non esiste un record per questo IP, viene creato con attempts=0, ban_count=0
+    if not security_log:
+        insert_security_log_for_ip(connection, ip)
+        logger.debug(f"Creato nuovo record di sicurezza per IP {ip}")
+        # Dopo l'inserimento, recupera nuovamente il record per avere i valori aggiornati
+        security_log = select_security_log_by_ip(connection, ip)
+
+    ###### Calcolo la data di adesso per eventuali confronti con la data di blocco dell'indirizzo ##############
+    datetime_now = datetime.now()
+    ##########################################
+
+    #### Prendo la data di eventuale blocco dell'indirizzo ip
+    data_blocked = security_log.blocked_until
+    ##########################################
+
+    ######## Se ip è bloccato ti fermo subito ###################
+    if data_blocked and datetime_now < data_blocked:
+        time_remaining = data_blocked - datetime_now
+        minutes_remaining = int(time_remaining.total_seconds() // 60)
+        logger.warning(f"IP {ip} è attualmente bloccato fino alle {data_blocked} (restano {minutes_remaining} minuti)")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"IP bloccato. Riprova tra {minutes_remaining} minuti."
+        )
+    #########################################################
+
+    ########### Prodeguo con Verifica LDAP se fallisce aggiorno attempts #####################
     is_authenticated, msg = verifica_utente_amiu_LDAP(username, password)
+
+    ##### Se LDAP fallisce inizia un sistema di blocco progressivo in base al numero di tentativi falliti per questo IP, con blocchi crescenti a 30 minuti, 24 ore e infine permanente dopo 3 tentativi falliti consecutivi. Se l'autenticazione ha successo, invece, si resetta il contatore dei tentativi e dei ban per questo IP. ######
     if not is_authenticated:
+        # Gestione di blocchi progressivi in caso di fallimenti ripetuti, con log degli eventi di sicurezza
+        manage_security_log_on_failure(security_log, connection)
         logger.warning(f"Autenticazione fallita per l'utente {username}: {msg}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenziali non valide",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    else:
+        # Se va a buon fine, resetta attempts e ban_count a 0 e la data di blocco
+        reset_log_security(connection, ip)
+        logger.info(f"Autenticazione riuscita per l'utente {username}")
+        
     ############### VErifica presenza utente nel database #######################
     user_query = check_user_db(username)
 
@@ -108,7 +159,6 @@ async def login( username: str = Form(...), password: str = Form(...)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Errore utente non trovato",
         )    
-
     
     # Creazione dell'oggetto User con i dati recuperati dal database per inserimento parametri nel token JWT
     user = User(**user_record)
