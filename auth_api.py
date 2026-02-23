@@ -4,18 +4,13 @@ from models.models import User,UserRoles,SecurityLog
 from repository.users_repo import check_user_db, get_user_roles
 from repository.security_repo import update_attempts0_block_30min,update_attempts0_block_24h, update_attempts0_block_permanent, get_security_log_by_ip,insert_security_log,update_attempts_only,reset_attempts_and_ban_count
 import logging
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm, HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import OAuth2PasswordBearer, HTTPBearer
 from passlib.context import CryptContext
 from config.ldap_amiu import verifica_utente_amiu_LDAP
 from config.jwt_token_config import create_access_token
 import sqlite3
-import os
-from dotenv import load_dotenv
 from datetime import datetime
-from zoneinfo import ZoneInfo
 from typing import Optional
-
-load_dotenv()
 
 logger = logging.getLogger(__name__)
 
