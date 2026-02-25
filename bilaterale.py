@@ -38,7 +38,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["API Percorsi Bilaterali (ID&A)"])
 
 
-@router.get("/elenco_percorsi_bilaterali_tree", response_model=List[Bilaterali_albero], description="Recupera la lista dei percorsi bilaterali ad albero")
+@router.get("/elenco_percorsi_bilaterali_tree", response_model=List[Bilaterali_albero],
+            description="Recupera la lista dei percorsi bilaterali ad albero")
 def elenco_percorsi_bilaterali_tree(
     payload: dict[str, Any] = Depends(get_current_user)
 ):
@@ -58,7 +59,8 @@ def elenco_percorsi_bilaterali_tree(
     return list_bilaterali_albero
 
 
-@router.get("/elenco_percorsi_bilaterali", response_model=List[Bilaterali], description="Recupera la lista dei percorsi bilaterali")
+@router.get("/elenco_percorsi_bilaterali",
+            response_model=List[Bilaterali], description="Recupera la lista dei percorsi bilaterali")
 def elenco_percorsi_bilaterali(
     payload: dict[str, Any] = Depends(get_current_user)
 ):
@@ -77,7 +79,11 @@ def elenco_percorsi_bilaterali(
     logger.info(f"Restituiti {len(list_bilaterali)} percorsi bilaterali.")
     return list_bilaterali
 
-@router.get("/dettagli_percorso", response_model=List[PercorsoDettaglio], description="Recupera la lista dei percorsi bilaterali")
+
+
+
+@router.get("/dettagli_percorso", response_model=List[PercorsoDettaglio], 
+            description="Recupera il dettaglio dei percorsi bilaterali")
 def dettagli_percorso(
     id: Optional[str] = Query(..., description="ID del percorso per filtrare i percorsi bilaterali"),
     payload: dict[str, Any] = Depends(get_current_user)
