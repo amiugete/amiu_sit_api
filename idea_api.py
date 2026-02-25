@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Query, Depends, HTTPException, status
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 from business.permission import get_current_user, verifica_permesso_utenze
 from config.database import fetch_list_by_query,fetch_one_by_query
-from models.models import  PaginatedResponse, PercorsoDettaglio,Utenza,Bilaterali_albero,Bilaterali
+
+from models.models import  FasceEtaCivico, PaginatedResponse,MacroCategoria, PaginatedResponse, PaginatedGeoJSONResponse, Utenza, PercorsoDettaglio,Utenza,Bilaterali_albero
 import logging
 from enum import Enum
 
@@ -17,13 +18,7 @@ from repository.macro_categorie_repo import prepared_statement_macro_categorie
 
 
 
-
 from config.database import fetch_list_by_query,fetch_list_by_query_mappe, fetch_list_by_query_strade
-
-
-
-from models.models import  MacroCategoria, PaginatedResponse, PaginatedGeoJSONResponse
-
 
 
 # In questo router sono definite delle api che restituiscono dati geografici di vario tipo (comuni, vie, piazzole, civici, quartieri, ambiti, municipi, point of interest) con filtri opzionali e paginazione. Tutti questi endpoint richiedono autenticazione tramite Bearer Token e verificano i permessi dell'utente prima di restituire i dati.
@@ -124,7 +119,7 @@ def lista_utenze(
 
 
 
-@router.get("/civici/anagrafe/fasce_eta", response_model=Union[PaginatedResponse[FasceEtaCivico], List[FasceEtaCivico]]  , description="Recupera la lista dei civici ragruppandoli per le fasce di età con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request. Richiede autenticazione (Bearer Token).")
+@router.get("/civici/anagrafe/fasce_eta", response_model=Union[PaginatedResponse[FasceEtaCivico ], List[FasceEtaCivico]]  , description="Recupera la lista dei civici ragruppandoli per le fasce di età con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request. Richiede autenticazione (Bearer Token).")
 def lista_civici_fasce_eta(
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
