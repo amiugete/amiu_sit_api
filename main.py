@@ -47,10 +47,10 @@ app = FastAPI(title="API AMIU", version="1.0.0", description="API per l'accesso 
 origins = [
     "http://localhost:8100",   # Il default di Ionic in sviluppo
     "http://localhost",         # Per i test da mobile
+    "https://localhost",         # Per i test da mobile
     "capacitor://localhost",    # Necessario per iOS
 ]
 
-# 2. Aggiungi il Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,             # Permette le origini specificate
