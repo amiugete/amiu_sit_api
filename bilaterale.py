@@ -2,7 +2,6 @@ from fastapi import APIRouter, Query, Depends, HTTPException, status
 from typing import Any, List, Optional
 from business.permission import get_current_user, verifica_permesso_utenze
 from config.database import fetch_list_by_query,fetch_one_by_query
-from models.models import  PaginatedResponse, PercorsoDettaglio,Utenza,Bilaterali_albero,Bilaterali
 import logging
 from enum import Enum
 
@@ -21,7 +20,9 @@ from config.database import fetch_list_by_query,fetch_list_by_query_mappe, fetch
 
 
 
-from models.models import  MacroCategoria, PaginatedResponse, PaginatedGeoJSONResponse
+from models.models import  PaginatedResponse, PercorsoDettaglio,Utenza,Bilaterali_albero,Bilaterali
+
+
 
 
 
@@ -30,9 +31,6 @@ from models.models import  MacroCategoria, PaginatedResponse, PaginatedGeoJSONRe
 # I modelli dei dati response e request sono definiti in models/models.py e i prepared statement per le query al database sono definiti nei repository corrispondenti alla tipologia di dato restituito (es. repository/vie_repo.py per le vie, repository/piazzole_repo.py per le piazzole, ecc.).
 # nel main richiamerò questi router e li inizializzo
 
-class TipoUtenza(str, Enum):
-    UD = "UD"
-    UND = "UND"
 
 logger = logging.getLogger(__name__)
 
