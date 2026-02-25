@@ -5,6 +5,7 @@ import logging
 
 # importo i router dai vari moduli
 from public_api import router as public_router
+from duale_api import router as duale_router
 from idea_api import router as idea_router
 from auth_api import router as auth_router
 from tellus_api import router as tellus_router
@@ -66,7 +67,8 @@ app.include_router(prefix="/auth", tags=["Servizi di autenticazione"], router=au
 
 
 # Definizione dei router per i servizi ad con accesso autorizzato
-app.include_router(prefix="", tags=["Servizi per utenti autenticati"], router=public_router)
+app.include_router(prefix="", router=public_router)
+app.include_router(prefix="", router=duale_router)
 app.include_router(prefix="", router=idea_router)
 app.include_router(prefix="", router=tellus_router)
 app.include_router(prefix="", router=localizzazione_router)

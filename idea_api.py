@@ -3,10 +3,26 @@ from typing import Any, List, Optional
 from business.permission import get_current_user, verifica_permesso_utenze
 from config.database import fetch_list_by_query,fetch_one_by_query
 from models.models import  PaginatedResponse, PercorsoDettaglio,Utenza,Bilaterali_albero,Bilaterali
-from repository.bilaterali_repo import prepared_statement_bilaterali_albero,prepared_statement_bilaterali, prepared_statement_percorso_dettaglio
-from repository.utenze_repo import prepared_statement_utenze_UD_with_count,prepared_statement_utenze_UND_with_count
 import logging
 from enum import Enum
+
+
+
+# i prepared statement per le query al database sono definiti nei repository corrispondenti 
+# alla tipologia di dato restituito (es. repository/vie_repo.py per le vie, repository/piazzole_repo.py per le piazzole, ecc.).
+from repository.bilaterali_repo import prepared_statement_bilaterali_albero,prepared_statement_bilaterali, prepared_statement_percorso_dettaglio
+from repository.utenze_repo import prepared_statement_utenze_UD_with_count,prepared_statement_utenze_UND_with_count
+from repository.macro_categorie_repo import prepared_statement_macro_categorie
+
+
+
+
+from config.database import fetch_list_by_query,fetch_list_by_query_mappe, fetch_list_by_query_strade
+
+
+
+from models.models import  MacroCategoria, PaginatedResponse, PaginatedGeoJSONResponse
+
 
 
 # In questo router sono definite delle api che restituiscono dati geografici di vario tipo (comuni, vie, piazzole, civici, quartieri, ambiti, municipi, point of interest) con filtri opzionali e paginazione. Tutti questi endpoint richiedono autenticazione tramite Bearer Token e verificano i permessi dell'utente prima di restituire i dati.
@@ -21,6 +37,24 @@ class TipoUtenza(str, Enum):
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Servizi IDEA"])
+
+
+# Endpoint per il recupero dei layer filtrati in base a titolo mappa, livello e nome
+@router.get("/macro_categorie", description="""Recupera le macro categorie TARI delle utenze del Comune di Genova.
+            Richiede autenticazione (Bearer Token).""")
+def macro_categorie(
+    payload: dict[str, Any] = Depends(get_current_user)
+):
+    logger.info("Ricevuta richiesta GET /macro_categorie")
+    query_select = prepared_statement_macro_categorie()
+    listaMacroCategorie = fetch_list_by_query_strade(query_select, {})
+    if listaMacroCategorie is None or len(listaMacroCategorie) == 0:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+    listaMacroCategorie = [MacroCategoria(**row) for row in listaMacroCategorie]
+    logger.info(f"Restituite {len(listaMacroCategorie)} macro categorie.")
+    return listaMacroCategorie
+
 
 @router.get("/utenze_tari", response_model= PaginatedResponse[Utenza],description="Recupera la lista delle utenze tari con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request", )
 def lista_utenze(
