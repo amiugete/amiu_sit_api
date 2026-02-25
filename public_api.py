@@ -43,7 +43,8 @@ router = APIRouter(tags=["Servizi generici"])
 
 
 ##############################################################
-@router.get("/ambiti", response_model=List[Ambito], description="Recupera la lista degli ambiti. Richiede autenticazione (Bearer Token).")
+@router.get("/ambiti", response_model=List[Ambito], 
+            description="Recupera la lista degli ambiti territoriali AMIU (livello sovra-comunale). Richiede autenticazione (Bearer Token).")
 def lista_ambiti(
     payload: dict[str, Any] = Depends(get_current_user)
 ):
@@ -86,7 +87,47 @@ def lista_comuni(
 
 
 ##############################################################
-@router.get("/vie", response_model=Union[List[Via], PaginatedResponse[Via]],description="Recupera la lista delle vie con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request. Richiede autenticazione (Bearer Token).", )
+@router.get("/municipi", response_model=List[Municipio], 
+            description="Recupera la lista dei municipi (per il solo Comune di Genova). Richiede autenticazione (Bearer Token).")
+def lista_municipi(
+    payload: dict[str, Any] = Depends(get_current_user)
+):
+    logger.info("Ricevuta richiesta GET /municipi")
+    query_select = prepared_statement_municipi_genova()
+    municipi_row = fetch_list_by_query(query_select, {})
+    if municipi_row is None or len(municipi_row) == 0:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+    municipi_list = [Municipio(**row) for row in municipi_row]
+    logger.info(f"Restituiti {len(municipi_list)} municipi.")
+    return municipi_list
+
+
+
+##############################################################
+@router.get("/quartieri", response_model=List[Quartiere],
+            description="Recupera la lista dei quartieri (per il solo Comune di Genova, fuori Genova quartiere = Comune). Richiede autenticazione (Bearer Token).")
+def lista_quartieri(
+    id_municipio: Optional[int] = Query(None, description="Filtra per municipio"),
+    payload: dict[str, Any] = Depends(get_current_user)
+):
+    logger.info("Ricevuta richiesta GET /quartieri")
+    params = {"id_municipio": id_municipio}
+    query_select = prepared_statement_quartieri()
+    listQuartieri = fetch_list_by_query(query_select, params)
+    if listQuartieri is None or len(listQuartieri) == 0:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+    listQuartieri = [Quartiere(**row) for row in listQuartieri]
+    logger.info(f"Restituiti {len(listQuartieri)} quartieri.")
+    return listQuartieri
+
+
+
+##############################################################
+@router.get("/vie", response_model=Union[List[Via], PaginatedResponse[Via]],
+            description="""Recupera la lista delle vie con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request.
+            Richiede autenticazione (Bearer Token).""", )
 def lista_vie(
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
@@ -138,46 +179,10 @@ def lista_vie(
 
 
 ##############################################################
-@router.get("/municipi", response_model=List[Municipio], description="Recupera la lista dei municipi. Richiede autenticazione (Bearer Token).")
-def lista_municipi(
-    payload: dict[str, Any] = Depends(get_current_user)
-):
-    logger.info("Ricevuta richiesta GET /municipi")
-    query_select = prepared_statement_municipi_genova()
-    municipi_row = fetch_list_by_query(query_select, {})
-    if municipi_row is None or len(municipi_row) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-    municipi_list = [Municipio(**row) for row in municipi_row]
-    logger.info(f"Restituiti {len(municipi_list)} municipi.")
-    return municipi_list
-
-
-
-##############################################################
-@router.get("/quartieri", response_model=List[Quartiere], description="Recupera la lista dei quartieri. Richiede autenticazione (Bearer Token).")
-def lista_quartieri(
-    id_municipio: Optional[int] = Query(None, description="Filtra per municipio"),
-    payload: dict[str, Any] = Depends(get_current_user)
-):
-    logger.info("Ricevuta richiesta GET /quartieri")
-    params = {"id_municipio": id_municipio}
-    query_select = prepared_statement_quartieri()
-    listQuartieri = fetch_list_by_query(query_select, params)
-    if listQuartieri is None or len(listQuartieri) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-    listQuartieri = [Quartiere(**row) for row in listQuartieri]
-    logger.info(f"Restituiti {len(listQuartieri)} quartieri.")
-    return listQuartieri
-
-
-
-##############################################################
 @router.get(
     "/aste",
     response_model=GeoJSNONModel,
-    description="Recupera le ASTE in formato GeoJSON con paginazione. Richiede autenticazione (Bearer Token)."
+    description="Recupera le Aste in formato GeoJSON con paginazione. Richiede autenticazione (Bearer Token)."
 )
 def lista_aste(
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
@@ -238,7 +243,9 @@ def lista_aste(
 
 
 ##############################################################
-@router.get("/civici", response_model=Union[PaginatedResponse[Civico], List[Civico]]  , description="Recupera la lista dei civici con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request. Richiede autenticazione (Bearer Token).")
+@router.get("/civici", response_model=Union[PaginatedResponse[Civico], List[Civico]] , 
+            description="""Recupera la lista dei civici (per ora del solo Comune di Genova) con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request. 
+            Richiede autenticazione (Bearer Token).""")
 def lista_civici(
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
@@ -293,7 +300,8 @@ def lista_civici(
 
 ##############################################################
 @router.get("/piazzole", response_model=Union[List[Piazzola],PaginatedResponse[Piazzola]],
-            description="Recupera la lista delle piazzole con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request. Richiede autenticazione (Bearer Token).", )
+            description="""Recupera la lista delle piazzole con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request. 
+            Richiede autenticazione (Bearer Token).""", )
 def lista_piazzole(
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
@@ -352,7 +360,9 @@ def lista_piazzole(
 
 
 
-@router.get("/POI", response_model=List[PointOfInterest], description="Recupera i dettagli dei Punti di Interesse (Rimesse, UT e Scarichi vari). Richiede autenticazione (Bearer Token).")
+@router.get("/POI", response_model=List[PointOfInterest],
+            description="""Recupera i dettagli dei Punti di Interesse (Rimesse, UT e Scarichi vari). 
+            Richiede autenticazione (Bearer Token).""")
 def lista_point_of_interest(
         payload: dict[str, Any] = Depends(get_current_user)
 ):

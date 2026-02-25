@@ -36,8 +36,8 @@ class TipoUtenza(str, Enum):
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["Utenze TARI Genova"])
 
+router = APIRouter(tags=["API Percorsi Bilaterali (ID&A)"])
 
 
 @router.get("/elenco_percorsi_bilaterali_tree", response_model=List[Bilaterali_albero], description="Recupera la lista dei percorsi bilaterali ad albero")

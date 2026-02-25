@@ -32,7 +32,8 @@ class TipoUtenza(str, Enum):
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["API Percorsi Bilaterali (ID&A)"])
+
+router = APIRouter(tags=["Utenze TARI Genova"])
 
 
 # Endpoint per il recupero dei layer filtrati in base a titolo mappa, livello e nome

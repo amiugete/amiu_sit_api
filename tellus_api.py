@@ -14,7 +14,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["Servizi TELLUS"])
+router = APIRouter(tags=["API Percorsi Posteriori (Tellus)"])
+
 
 
 # In questo router sono definite delle api che restituiscono dati geografici di vario tipo (comuni, vie, piazzole, civici, quartieri, ambiti, municipi, point of interest) con filtri opzionali e paginazione. Tutti questi endpoint richiedono autenticazione tramite Bearer Token e verificano i permessi dell'utente prima di restituire i dati.
@@ -23,47 +24,8 @@ router = APIRouter(tags=["Servizi TELLUS"])
 
 # nel main richiamerò questi router e li inizializzo
 
-@router.get(
-    "/percorsi_p",
-    response_model=Union[List[PosterioriPercorso], PaginatedResponse[PosterioriPercorso]],
-    description="Restituisce la lista dei percorsi posteriori. Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD). Richiede autenticazione (Bearer Token)."
-)
-def lista_percorsi_p(
-    page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
-    size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
-    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
-    payload: dict[str, Any] = Depends(get_current_user)
-):
-    logger.info("Ricevuta richiesta GET /percorsi_p")
-    listPercorsi_row: List[dict] | None
-    query_select = ''
-    offset = 0
-    limit = 1000
 
-    if page is not None and size is not None and size > 0 and page > 0:
-        offset = (page - 1) * size
-        limit = size
 
-    params = {"last_update": last_update}
-    query_select = prepared_statement_posteriori_with_count()
-    listPercorsi_row = fetch_list_by_query(query_select, {**params, "limit": limit, "offset": offset})
-
-    if listPercorsi_row is None or len(listPercorsi_row) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-
-    lista_percorsi_p = [PosterioriPercorso(**row) for row in listPercorsi_row]
-    # Query per il ritorno del risultato paginato
-    if page is not None and size is not None and size > 0 and page > 0:
-        result = PaginatedResponse[PosterioriPercorso]()
-        result.total = lista_percorsi_p[0].total_count
-        result.content = lista_percorsi_p
-        result.page = page
-        result.size = size
-        result.pages = (result.total + size - 1) // size if size else 0
-        return result
-
-    return lista_percorsi_p
 
 @router.get(
     "/piazzole_amiu",
@@ -111,10 +73,14 @@ def lista_piazzole_amiu(
     return lista_piazzole_paginata
 
 
+
 @router.get(
     "/elementi_p",
     response_model=Union[List[ElementoAmiu], PaginatedResponse[ElementoAmiu]],
-    description="Restituisce la lista delle piazzole amiu. Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD). Richiede autenticazione (Bearer Token)."
+    description="""Restituisce la lista delle componenti in piazzola. 
+    Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. 
+    È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD). 
+    Richiede autenticazione (Bearer Token)."""
 )
 def lista_elementi_p(
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
@@ -156,10 +122,61 @@ def lista_elementi_p(
     return lista_elementi
 
 
+
+
+@router.get(
+    "/percorsi_p",
+    response_model=Union[List[PosterioriPercorso], PaginatedResponse[PosterioriPercorso]],
+    description="""Restituisce la lista dei percorsi posteriori. 
+    Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. 
+    È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD). 
+    Richiede autenticazione (Bearer Token)."""
+)
+def lista_percorsi_p(
+    page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
+    size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
+    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
+    payload: dict[str, Any] = Depends(get_current_user)
+):
+    logger.info("Ricevuta richiesta GET /percorsi_p")
+    listPercorsi_row: List[dict] | None
+    query_select = ''
+    offset = 0
+    limit = 1000
+
+    if page is not None and size is not None and size > 0 and page > 0:
+        offset = (page - 1) * size
+        limit = size
+
+    params = {"last_update": last_update}
+    query_select = prepared_statement_posteriori_with_count()
+    listPercorsi_row = fetch_list_by_query(query_select, {**params, "limit": limit, "offset": offset})
+
+    if listPercorsi_row is None or len(listPercorsi_row) == 0:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+
+    lista_percorsi_p = [PosterioriPercorso(**row) for row in listPercorsi_row]
+    # Query per il ritorno del risultato paginato
+    if page is not None and size is not None and size > 0 and page > 0:
+        result = PaginatedResponse[PosterioriPercorso]()
+        result.total = lista_percorsi_p[0].total_count
+        result.content = lista_percorsi_p
+        result.page = page
+        result.size = size
+        result.pages = (result.total + size - 1) // size if size else 0
+        return result
+
+    return lista_percorsi_p
+
+
+
 @router.get(
     "/itinerari_p",
     response_model=Union[List[ItinerarioPercorsoPsteriore], PaginatedResponse[ItinerarioPercorsoPsteriore]],
-    description="Restituisce la lista degli itinerari dei percorsi dei posteriori amiu. Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD). Richiede autenticazione (Bearer Token)."
+    description="""Restituisce il dettaglio dei percorsi dei posteriori amiu. 
+    Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. 
+    È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD). Richiede autenticazione (Bearer Token)."""
 )
 def lista_itinerari_p(
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
