@@ -15,7 +15,6 @@ from models.models import  FasceEtaCivico, GeoJSNONModel,LayerFilterResponse, Ma
 
 
 #repository
-from repository.civici_anagrafe_fasce_eta import prepared_statement_fasce_eta, prepared_statement_fasce_eta_with_count
 from repository.layer_filter_repo import get_layer_filter_query
 from repository.municipi_repo import prepared_statement_municipi_genova
 from repository.vie_repo import prepared_statement_vie, prepared_statement_vie_with_count

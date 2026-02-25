@@ -118,7 +118,7 @@ def fetch_list_by_query_strade(sql, params=None) -> Optional[List[dict]]:
         return None
    
 
-def init_security_db():
+def init_security_log_db():
     """Inizializza la tabella per i log di sicurezza se non esiste già; il database sqlite dovrebbe trovarsi in un percorso definito nella variabile d'ambiente SQL_LITE_PATH,
       che dovrebbe essere configurata correttamente per evitare problemi di accesso al database."""
     conn = get_security_connection()
@@ -130,7 +130,29 @@ def init_security_db():
     attempts INT DEFAULT 0, -- Fallimenti attuali
     ban_count INT DEFAULT 0, -- Quante volte è stato già bannato
     last_failure TIMESTAMP NULL,
-    blocked_until TIMESTAMP NULL
+    blocked_until TIMESTAMP NULL,
+    last_access TIMESTAMP NULL,
+    count_access INT DEFAULT 0 -- Numero di accessi riusciti
+   )
+    """)
+    conn.commit()
+    conn.close()
+
+def init_security_log_user_db():
+    """Inizializza la tabella per i log di sicurezza se non esiste già; il database sqlite dovrebbe trovarsi in un percorso definito nella variabile d'ambiente SQL_LITE_PATH,
+      che dovrebbe essere configurata correttamente per evitare problemi di accesso al database."""
+    conn = get_security_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS security_logs_user
+   (
+    user VARCHAR(45) PRIMARY KEY,
+    attempts INT DEFAULT 0, -- Fallimenti attuali
+    ban_count INT DEFAULT 0, -- Quante volte è stato già bannato
+    last_failure TIMESTAMP NULL,
+    blocked_until TIMESTAMP NULL,
+    last_access TIMESTAMP NULL,
+    count_access INT DEFAULT 0 -- Numero di accessi riusciti
    )
     """)
     conn.commit()
