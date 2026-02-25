@@ -10,6 +10,7 @@ from enum import Enum
 
 # i prepared statement per le query al database sono definiti nei repository corrispondenti 
 # alla tipologia di dato restituito (es. repository/vie_repo.py per le vie, repository/piazzole_repo.py per le piazzole, ecc.).
+from repository.civici_anagrafe_fasce_eta import prepared_statement_fasce_eta, prepared_statement_fasce_eta_with_count
 from repository.bilaterali_repo import prepared_statement_bilaterali_albero,prepared_statement_bilaterali, prepared_statement_percorso_dettaglio
 from repository.utenze_repo import prepared_statement_utenze_UD_with_count,prepared_statement_utenze_UND_with_count
 from repository.macro_categorie_repo import prepared_statement_macro_categorie
@@ -36,7 +37,7 @@ class TipoUtenza(str, Enum):
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["Servizi IDEA"])
+router = APIRouter(tags=["API Percorsi Bilaterali (ID&A)"])
 
 
 # Endpoint per il recupero dei layer filtrati in base a titolo mappa, livello e nome
@@ -121,62 +122,57 @@ def lista_utenze(
 
     return result
 
-@router.get("/elenco_percorsi_bilaterali_tree", response_model=List[Bilaterali_albero], description="Recupera la lista dei percorsi bilaterali ad albero")
-def elenco_percorsi_bilaterali_tree(
+
+
+@router.get("/civici/anagrafe/fasce_eta", response_model=Union[PaginatedResponse[FasceEtaCivico], List[FasceEtaCivico]]  , description="Recupera la lista dei civici ragruppandoli per le fasce di età con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request. Richiede autenticazione (Bearer Token).")
+def lista_civici_fasce_eta(
+    page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
+    size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
+    id_via: Optional[int] = Query(None, description="Filtra per via"),
+    cod_civico: Optional[int] = Query(None, description="Filtra per civico"),
     payload: dict[str, Any] = Depends(get_current_user)
 ):
-    """Endpoint per recuperare la lista dei percorsi bilaterali ad albero con autenticazione."""
+    logger.info("Ricevuta richiesta GET /civici/anagrafe/fasce_eta")
+    listCivici: List[dict] | None
+    query_select = ''
+    offset = None
+    limit = None 
     
-    logger.info("Ricevuta richiesta GET /elenco_percorsi_bilaterali_tree")
-
-    query_select = prepared_statement_bilaterali_albero()
-    list_bilaterali_albero = fetch_list_by_query(query_select, {})
-
-    if list_bilaterali_albero is None or len(list_bilaterali_albero) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
+    if page is not None and size is not None and size > 0:     
+        offset = (page - 1) * size
+        limit = size
     
-    list_bilaterali_albero = [Bilaterali_albero(**row) for row in list_bilaterali_albero]
-    logger.info(f"Restituiti {len(list_bilaterali_albero)} percorsi bilaterali ad albero.")
-    return list_bilaterali_albero
-
-
-@router.get("/elenco_percorsi_bilaterali", response_model=List[Bilaterali], description="Recupera la lista dei percorsi bilaterali")
-def elenco_percorsi_bilaterali(
-    payload: dict[str, Any] = Depends(get_current_user)
-):
-    """Endpoint per recuperare la lista dei percorsi bilaterali con autenticazione."""
-      
-    logger.info("Ricevuta richiesta GET /elenco_percorsi_bilaterali")
-
-    query_select = prepared_statement_bilaterali()
-    list_bilaterali = fetch_list_by_query(query_select, {})
-
-    if list_bilaterali is None or len(list_bilaterali) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
+    params = {"id_via": id_via, "cod_civico": cod_civico}
     
-    list_bilaterali = [Bilaterali(**row) for row in list_bilaterali]
-    logger.info(f"Restituiti {len(list_bilaterali)} percorsi bilaterali.")
-    return list_bilaterali
+    if limit is not None and offset is not None:
+        query_select = prepared_statement_fasce_eta_with_count()
+        listCivici = fetch_list_by_query_strade(query_select, {**params, "limit": limit, "offset": offset})
 
-@router.get("/dettagli_percorso", response_model=List[PercorsoDettaglio], description="Recupera la lista dei percorsi bilaterali")
-def dettagli_percorso(
-    id: Optional[str] = Query(..., description="ID del percorso per filtrare i percorsi bilaterali"),
-    payload: dict[str, Any] = Depends(get_current_user)
-):
-    """Endpoint per recuperare i dettagli del percorso con autenticazione."""
+        if listCivici is None or len(listCivici) == 0:
+            logger.info("Nessun risultato ottenuto dalla query.")
+            return []
+        
+        listCivici = [FasceEtaCivico(**row) for row in listCivici]
+        result = PaginatedResponse[FasceEtaCivico]()
+        result.total = listCivici[0].total_count if listCivici else 0
+        result.content = listCivici
+        result.page = page
+        result.size = size
+        result.pages = (result.total + size - 1) // size if size else 0
+        logger.info(f"Restituiti {result.total} record.")
+    else:
+        query_select = prepared_statement_fasce_eta()
+        listCivici = fetch_list_by_query_strade(query_select, {**params})
+
+        if listCivici is None or len(listCivici) == 0:
+            logger.info("Nessun risultato ottenuto dalla query.")
+            return []
+        
+        listCivici = [FasceEtaCivico(**row) for row in listCivici]
+        logger.info(f"Restituiti {len(listCivici)} record.") 
+        return listCivici
     
-    logger.info("Ricevuta richiesta GET /dettagli_percorso")
-    query_select = prepared_statement_percorso_dettaglio()
-    dettaglio_list = fetch_list_by_query(query_select, {"id": id})
+    return result
 
-    if dettaglio_list is None or len(dettaglio_list) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-    
-    dettaglio_list = [PercorsoDettaglio(**row) for row in dettaglio_list]
-    logger.info(f"Restituiti {len(dettaglio_list)} dettagli percorso.")
 
-    return dettaglio_list
 

@@ -8,7 +8,7 @@ from enum import Enum
 
 
 # database
-from config.database import fetch_list_by_query,fetch_list_by_query_mappe, fetch_list_by_query_strade
+from config.database import fetch_list_by_query,fetch_list_by_query_mappe
 
 
 
