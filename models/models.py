@@ -262,6 +262,19 @@ class Point2Area(BaseModel):
     id_quartiere: Optional[int] = None
     quartiere: Optional[str] = None
 
+class FasceEtaCivico(BaseModel):
+    cod_civico: Optional[str] = None
+    cod_via: Optional[int] = None
+    n0_10: Optional[int] = None
+    n11_20: Optional[int] = None
+    n21_30: Optional[int] = None
+    n31_40: Optional[int] = None
+    n41_50: Optional[int] = None
+    n51_60: Optional[int] = None
+    n60_70: Optional[int] = None
+    n70_80: Optional[int] = None
+    npiu80: Optional[int] = None
+    total_count: Optional[int] = None
 
 class PercorsoDettaglio(BaseModel):
     seq: Optional[int]
@@ -317,14 +330,23 @@ class Geometry(BaseModel):
         coordinates: list[list[float]]
 
 
-
-
 class SecurityLog(BaseModel):
     ip_address: str
     attempts: int
     ban_count: int
     last_failure: Optional[datetime] = None
     blocked_until: Optional[datetime] = None
+    last_access: Optional[datetime] = None
+    count_access: Optional[int] = None
+
+class SecurityLogUser(BaseModel):
+    user: str
+    attempts: int
+    ban_count: int
+    last_failure: Optional[datetime] = None
+    blocked_until: Optional[datetime] = None
+    last_access: Optional[datetime] = None
+    count_access: Optional[int] = None
 
 
 class UserRoles(BaseModel):
