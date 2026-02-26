@@ -56,7 +56,7 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     # allow_origins=origins,             # Permette le origini specificate
-    allow_origins=["*"],          # Scorciatoia: permette TUTTO (meno sicuro)
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],               # Permette GET, POST, PUT, DELETE, etc.
     allow_headers=["*"],               # Permette tutti gli header (es. Authorization)
@@ -69,11 +69,11 @@ app.include_router(prefix="/auth", tags=["Servizi di autenticazione"], router=au
 
 # Definizione dei router per i servizi ad con accesso autorizzato
 app.include_router(prefix="", router=public_router)
-app.include_router(prefix="", router=duale_router)
-app.include_router(prefix="", router=idea_router)
-app.include_router(prefix="", router=bilaterale_router)
-app.include_router(prefix="", router=tellus_router)
-app.include_router(prefix="", router=localizzazione_router)
+app.include_router(prefix="/duale", router=duale_router)
+app.include_router(prefix="/utenze", router=idea_router)
+app.include_router(prefix="/bilaterale", router=bilaterale_router)
+app.include_router(prefix="/posteriori", router=tellus_router)
+app.include_router(prefix="/locate", router=localizzazione_router)
 
 
 

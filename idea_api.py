@@ -53,7 +53,9 @@ def macro_categorie(
     return listaMacroCategorie
 
 
-@router.get("/utenze_tari", response_model= PaginatedResponse[Utenza],description="Recupera la lista delle utenze tari con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request", )
+@router.get("/utenze_tari", response_model= PaginatedResponse[Utenza],
+            description="""Recupera la lista delle utenze tari con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request.Richiede autenticazione (Bearer Token).
+              Per motivi di privacy l'acceso è consentito solo agli utenti con permessi specifici per accedere a questo endpoint, altrimenti viene restituito un errore 403 Forbidden.""")
 def lista_utenze(
     tipo: TipoUtenza = Query(..., description="Filtra per tipo di utenza (UD = Domestica o UND = Non Domestica)"),
     payload: dict[str, Any] = Depends(get_current_user),

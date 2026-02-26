@@ -34,6 +34,7 @@ async def login(request: Request,
     try:
         # 1. Recupera l'IP del client
         ip = get_client_ip(request)
+        # Per forzare la valutazione della password e loggare eventuali errori di input
 
         # tabella security_logs inizializzata se non esiste già
         init_security_log_db()
@@ -106,7 +107,7 @@ async def login(request: Request,
     #########################################################
 
     ########### Prodeguo con Verifica LDAP se fallisce aggiorno attempts #####################
-    is_authenticated, msg = verifica_utente_amiu_LDAP(username, password)
+    is_authenticated, msg = verifica_utente_amiu_LDAP(username, password.get_secret_value())
 
     ##### Se LDAP fallisce inizia un sistema di blocco progressivo in base al numero di tentativi falliti per questo IP, con blocchi crescenti a 30 minuti, 24 ore e infine permanente dopo 3 tentativi falliti consecutivi. Se l'autenticazione ha successo, invece, si resetta il contatore dei tentativi e dei ban per questo IP. ######
     if not is_authenticated:
