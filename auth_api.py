@@ -24,39 +24,50 @@ router = APIRouter()
 
 ###########################################      API        ################################################################
 @router.post("/token", description="Genera un token JWT per autenticare")
-async def login( request: Request,username: str = Form(...), password: str = Form(...)):
+async def login(request: Request, username: str = Form(...), password: str = Form(...)):
     """Endpoint per l'autenticazione e la generazione del token JWT"""
-    # 1. Recupera l'IP del client
-    ip = get_client_ip(request)
+    try:
+        # 1. Recupera l'IP del client
+        ip = get_client_ip(request)
 
-    # tabella security_logs inizializzata se non esiste già
-    init_security_log_db()
-    init_security_log_user_db()
+        # tabella security_logs inizializzata se non esiste già
+        init_security_log_db()
+        init_security_log_user_db()
 
-    connection = get_security_connection()
-    connection.row_factory = sqlite3.Row
+        connection = get_security_connection()
+        connection.row_factory = sqlite3.Row
 
-    # Recupera il record per questo IP dalla tabella security_logs se presente
-    security_log : Optional[SecurityLog] = select_security_log_by_ip(connection, ip)
-    security_log_user : Optional[SecurityLogUser] = select_security_log_user_by_user(connection, username)
+        # Recupera il record per questo IP dalla tabella security_logs se presente
+        security_log : Optional[SecurityLog] = select_security_log_by_ip(connection, ip)
+        security_log_user : Optional[SecurityLogUser] = select_security_log_user_by_user(connection, username)
 
-    # Se non esiste un record per questo IP, viene creato con attempts=0, ban_count=0
-    if not security_log:
-        insert_security_log_for_ip(connection, ip)
-        logger.debug(f"Creato nuovo record di sicurezza per IP {ip}")
-        # Dopo l'inserimento, recupera nuovamente il record per avere i valori aggiornati
-        security_log = select_security_log_by_ip(connection, ip)
+        # Se non esiste un record per questo IP, viene creato con attempts=0, ban_count=0
+        if not security_log:
+            insert_security_log_for_ip(connection, ip)
+            logger.debug(f"Creato nuovo record di sicurezza per IP {ip}")
+            # Dopo l'inserimento, recupera nuovamente il record per avere i valori aggiornati
+            security_log = select_security_log_by_ip(connection, ip)
 
-    # Se non esiste un record per questo utente, viene creato con attempts=0, ban_count=0
-    if not security_log_user:
-        insert_security_log_for_user(connection, username)
-        logger.debug(f"Creato nuovo record di sicurezza per utente {username}")
-        # Dopo l'inserimento, recupera nuovamente il record per avere i valori aggiornati
-        security_log_user = select_security_log_user_by_user(connection, username)
+        # Se non esiste un record per questo utente, viene creato con attempts=0, ban_count=0
+        if not security_log_user:
+            insert_security_log_for_user(connection, username)
+            logger.debug(f"Creato nuovo record di sicurezza per utente {username}")
+            # Dopo l'inserimento, recupera nuovamente il record per avere i valori aggiornati
+            security_log_user = select_security_log_user_by_user(connection, username)
 
-    ###### Registro l'accesso al server ############
-    register_access_log(connection, security_log.ip_address)
-    register_access_log_user(connection, security_log_user.user)
+        ###### Registro l'accesso al server ############
+        register_access_log(connection, security_log.ip_address)
+        register_access_log_user(connection, security_log_user.user)
+    except HTTPException as http_exc:
+        # Loggo comunque le HTTPException per tracciabilità
+        logger.error(f"HTTPException: {http_exc.detail}")
+        raise
+    except Exception as exc:
+        logger.exception(f"Errore imprevisto durante la login per utente {username}: {exc}")
+        raise HTTPException(
+            status_code=500,
+            detail="Errore interno inatteso durante l'autenticazione. Contattare l'amministratore.",
+        )
 
     ###### Calcolo la data di adesso per eventuali confronti con la data di blocco dell'indirizzo ##############
     datetime_now = datetime.now()

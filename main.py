@@ -55,8 +55,8 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,             # Permette le origini specificate
-    # allow_origins=["*"],             # Scorciatoia: permette TUTTO (meno sicuro)
+    # allow_origins=origins,             # Permette le origini specificate
+    allow_origins=["*"],          # Scorciatoia: permette TUTTO (meno sicuro)
     allow_credentials=True,
     allow_methods=["*"],               # Permette GET, POST, PUT, DELETE, etc.
     allow_headers=["*"],               # Permette tutti gli header (es. Authorization)
