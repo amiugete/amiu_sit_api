@@ -1,4 +1,7 @@
 from fastapi import APIRouter, Form, HTTPException, status,Request #, Query, Depends
+
+from pydantic import SecretStr
+
 from config.database import fetch_one_by_query,init_security_log_db,get_security_connection, init_security_log_user_db
 from models.models import SecurityLogUser, User,UserRoles,SecurityLog
 from repository.users_repo import check_user_db, get_user_roles
@@ -24,7 +27,9 @@ router = APIRouter()
 
 ###########################################      API        ################################################################
 @router.post("/token", description="Genera un token JWT per autenticare")
-async def login(request: Request, username: str = Form(...), password: str = Form(...)):
+async def login(request: Request,
+                username: str = Form(..., description="Utente di dominio"),
+                password: SecretStr = Form(..., description="Password dell'utente di dominio")):
     """Endpoint per l'autenticazione e la generazione del token JWT"""
     try:
         # 1. Recupera l'IP del client
