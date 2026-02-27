@@ -26,7 +26,7 @@ from models.models import  PaginatedResponse, PercorsoDettaglio,Utenza,Bilateral
 
 
 
-# In questo router sono definite delle api che restituiscono dati geografici di vario tipo (comuni, vie, piazzole, civici, quartieri, ambiti, municipi, point of interest) con filtri opzionali e paginazione. Tutti questi endpoint richiedono autenticazione tramite Bearer Token e verificano i permessi dell'utente prima di restituire i dati.
+# In questo router sono definite delle api che restituiscono dati geografici di vario tipo (comuni, vie, piazzole, civici, quartieri, ambiti, municipi, point of interest) con filtri opzionali e paginazione. Richiede autenticazione (Bearer Token).
 # I servizi che restituiscono i dati in un oggetto di tipo PaginatedResponse sono quelli che possono potenzialmente restituire liste molto grandi di risultati, mentre quelli che restituiscono i dati in formato JSON sono quelli che restituiscono liste più piccole di risultati quasi identici agli oggetti restituiti da ws_amiugis.
 # I modelli dei dati response e request sono definiti in models/models.py e i prepared statement per le query al database sono definiti nei repository corrispondenti alla tipologia di dato restituito (es. repository/vie_repo.py per le vie, repository/piazzole_repo.py per le piazzole, ecc.).
 # nel main richiamerò questi router e li inizializzo
@@ -39,7 +39,7 @@ router = APIRouter(tags=["API Percorsi Bilaterali (ID&A)"])
 
 
 @router.get("/elenco_percorsi_bilaterali_tree", response_model=List[Bilaterali_albero],
-            description="Recupera la lista dei percorsi bilaterali ad albero")
+            description="Recupera la lista dei percorsi bilaterali ad albero. Richiede autenticazione (Bearer Token).")
 def elenco_percorsi_bilaterali_tree(
     payload: dict[str, Any] = Depends(get_current_user)
 ):
@@ -60,7 +60,7 @@ def elenco_percorsi_bilaterali_tree(
 
 
 @router.get("/elenco_percorsi_bilaterali",
-            response_model=List[Bilaterali], description="Recupera la lista dei percorsi bilaterali")
+            response_model=List[Bilaterali], description="Recupera la lista dei percorsi bilaterali. Richiede autenticazione (Bearer Token).")
 def elenco_percorsi_bilaterali(
     payload: dict[str, Any] = Depends(get_current_user)
 ):
@@ -83,7 +83,7 @@ def elenco_percorsi_bilaterali(
 
 
 @router.get("/dettagli_percorso", response_model=List[PercorsoDettaglio], 
-            description="Recupera il dettaglio dei percorsi bilaterali")
+            description="Recupera il dettaglio dei percorsi bilaterali. Richiede autenticazione (Bearer Token).")
 def dettagli_percorso(
     id: Optional[str] = Query(..., description="ID del percorso per filtrare i percorsi bilaterali"),
     payload: dict[str, Any] = Depends(get_current_user)

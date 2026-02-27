@@ -286,6 +286,22 @@ class PercorsoDettaglio(BaseModel):
     tipo_elem: Optional[str]
     num: Optional[int]
 
+class UtenzeDomestichePerCivico(BaseModel):
+    cod_civico: Optional[str] = None
+    cod_via: Optional[int] = None
+    descr_categoria: Optional[str] = None
+    utilizzo: Optional[int] = None
+    descr_utilizzo: Optional[str] = None
+    num_utenze: Optional[int] = None
+    num_occupanti: Optional[int] = None
+    
+class UtenzeNonDomestichePerCivico(BaseModel):
+    cod_civico: Optional[str] = None
+    cod_via: Optional[int] = None
+    descr_categoria: Optional[str] = None
+    utilizzo: Optional[int] = None
+    descr_utilizzo: Optional[str] = None
+    num_utenze: Optional[int] = None
 
 class GeoJSNONModel(BaseModel):
     type: str = 'FeatureCollection'

@@ -117,6 +117,18 @@ def fetch_list_by_query_strade(sql, params=None) -> Optional[List[dict]]:
         logger.error(f"Errore SQL o di connessione: {str(e)}")
         return None
    
+def fetch_count_by_query_strade(sql, params=None) -> int:
+   """Esegue una query sul database Strade e ritorna il conteggio dei risultati."""
+   try:   
+        with engine_oracle.connect() as connection:
+            stream = connection.execute(text(sql), params or {})
+            return stream.scalar() if stream else None
+   except Exception as e:
+        logger.error(f"Errore SQL o di connessione: {str(e)}")
+        return None
+   
+
+
 
 def init_security_log_db():
     """Inizializza la tabella per i log di sicurezza se non esiste già; il database sqlite dovrebbe trovarsi in un percorso definito nella variabile d'ambiente SQL_LITE_PATH,

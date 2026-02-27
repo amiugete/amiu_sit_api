@@ -31,13 +31,12 @@ logger = logging.getLogger(__name__)
 #router = APIRouter()
 router = APIRouter(tags=["Servizi per il portale Duale"])
 
-# In questo router sono definite delle api che restituiscono dati geografici di vario tipo (comuni, vie, piazzole, civici, quartieri, ambiti, municipi, point of interest) con filtri opzionali e paginazione. Tutti questi endpoint richiedono autenticazione tramite Bearer Token e verificano i permessi dell'utente prima di restituire i dati.
+# In questo router sono definite delle api che restituiscono dati geografici di vario tipo (comuni, vie, piazzole, civici, quartieri, ambiti, municipi, point of interest) con filtri opzionali e paginazione. Richiede autenticazione (Bearer Token).
 # I servizi che restituiscono i dati in un oggetto di tipo PaginatedResponse sono quelli che possono potenzialmente restituire liste molto grandi di risultati, mentre quelli che restituiscono i dati in formato JSON sono quelli che restituiscono liste più piccole di risultati quasi identici agli oggetti restituiti da ws_amiugis.
 # I modelli dei dati response e request sono definiti in models/models.py e i prepared statement per le query al database sono definiti nei repository corrispondenti alla tipologia di dato restituito (es. repository/vie_repo.py per le vie, repository/piazzole_repo.py per le piazzole, ecc.).
 
 # nel main richiamerò questi router e li inizializzo
 
-# Endpoint per il recupero dei layer filtrati in base a titolo mappa, livello e nome
 @router.get("/mappe", description="Recupera le mappe disponibili. Richiede autenticazione (Bearer Token).")
 def mappe(
     payload: dict[str, Any] = Depends(get_current_user)

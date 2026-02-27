@@ -126,8 +126,9 @@ def lista_quartieri(
 
 ##############################################################
 @router.get("/vie", response_model=Union[List[Via], PaginatedResponse[Via]],
-            description="""Recupera la lista delle vie con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request.
-            Richiede autenticazione (Bearer Token).""", )
+            description="""Recupera la lista delle vie con filtri opzionali. 
+             Richiede autenticazione (Bearer Token).
+             Paginazione opzionale gestita tramite parametri page e size nella request.""", )
 def lista_vie(
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
@@ -182,7 +183,12 @@ def lista_vie(
 @router.get(
     "/aste",
     response_model=GeoJSNONModel,
-    description="Recupera le Aste in formato GeoJSON con paginazione. Richiede autenticazione (Bearer Token)."
+    description="""Recupera le Aste in formato GeoJSON con paginazione.
+        Richiede autenticazione (Bearer Token).
+        I filtri opzionali includono ID via, ID municipio e data di ultimo aggiornamento (YYYYMMDD).
+        La risposta include il conteggio totale degli elementi e i dettagli di ogni asta,
+        inclusa la geometria in formato GeoJSON.
+        Paginazione opzionale gestita tramite parametri page e size nella request."""
 )
 def lista_aste(
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
@@ -244,8 +250,9 @@ def lista_aste(
 
 ##############################################################
 @router.get("/civici", response_model=Union[PaginatedResponse[Civico], List[Civico]] , 
-            description="""Recupera la lista dei civici (per ora del solo Comune di Genova) con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request. 
-            Richiede autenticazione (Bearer Token).""")
+            description="""Recupera la lista dei civici (per ora del solo Comune di Genova) con filtri opzionali.
+            Richiede autenticazione (Bearer Token).
+            Paginazione opzionale gestita tramite parametri page e size nella request.""")
 def lista_civici(
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
@@ -300,8 +307,9 @@ def lista_civici(
 
 ##############################################################
 @router.get("/piazzole", response_model=Union[List[Piazzola],PaginatedResponse[Piazzola]],
-            description="""Recupera la lista delle piazzole con filtri opzionali e paginazione se vengono indicati i parametri page e size nella request. 
-            Richiede autenticazione (Bearer Token).""", )
+            description="""Recupera la lista delle piazzole con filtri opzionali.
+            Richiede autenticazione (Bearer Token).
+            Paginazione opzionale gestita tramite parametri page e size nella request.""", )
 def lista_piazzole(
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
