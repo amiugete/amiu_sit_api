@@ -1,13 +1,11 @@
 from fastapi import APIRouter, Query, Depends, HTTPException, status
 from typing import Any, List, Optional, Union
 from business.permission import get_current_user, verifica_permesso_utenze
-from config.database import fetch_list_by_query,fetch_one_by_query
+from config.database import fetch_list_by_query
 
-from models.models import UtenzeDomestichePerCivico, UtenzeNonDomestichePerCivico,FasceEtaCivico, PaginatedResponse,MacroCategoria, PaginatedResponse, PaginatedGeoJSONResponse, Utenza, PercorsoDettaglio,Utenza,Bilaterali_albero
+from models.models import UtenzeDomestichePerCivico, UtenzeNonDomestichePerCivico,FasceEtaCivico, PaginatedResponse,MacroCategoria, PaginatedResponse, Utenza,Utenza
 import logging
 from enum import Enum
-
-
 
 # i prepared statement per le query al database sono definiti nei repository corrispondenti 
 # alla tipologia di dato restituito (es. repository/vie_repo.py per le vie, repository/piazzole_repo.py per le piazzole, ecc.).
@@ -15,8 +13,6 @@ from repository.civici_anagrafe_fasce_eta import prepared_statement_fasce_eta, p
 from repository.bilaterali_repo import prepared_statement_bilaterali_albero,prepared_statement_bilaterali, prepared_statement_percorso_dettaglio
 from repository.utenze_repo import prepared_statement_utenze_UD_with_count,prepared_statement_utenze_UND_with_count,prepared_statement_utenze_domestiche_per_civico, prepared_statement_utenze_domestiche_per_civico_total_count,prepared_statement_utenze_non_domestiche_per_civico, prepared_statement_utenze_non_domestiche_per_civico_total_count, prepared_statement_utenze_non_domestiche_per_civico_total_count
 from repository.macro_categorie_repo import prepared_statement_macro_categorie
-
-
 
 from config.database import fetch_list_by_query, fetch_list_by_query_strade,fetch_count_by_query_strade
 

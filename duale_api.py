@@ -1,30 +1,19 @@
-from fastapi import APIRouter, Query, Depends, HTTPException, status
-from typing import Any, List, Optional
-from business.permission import get_current_user, verifica_permesso_utenze
-from config.database import fetch_list_by_query,fetch_one_by_query
-from models.models import  PaginatedResponse, PercorsoDettaglio,Utenza,Bilaterali_albero,Bilaterali
+from fastapi import APIRouter, Query, Depends, HTTPException
+from typing import Any, List
+from business.permission import get_current_user
+from config.database import fetch_list_by_query
 import logging
 from enum import Enum
-
 
 # database
 from config.database import fetch_list_by_query,fetch_list_by_query_mappe
 
-
-
 # models
-from models.models import  GeoJSNONModel,LayerFilterResponse, MacroCategoria, Mappa, Municipio, MyFutureModel, Piazzola, PaginatedResponse, PaginatedGeoJSONResponse, Via, Comune, Civico, Quartiere, Ambito, PointOfInterest
-
+from models.models import  LayerFilterResponse, Mappa
 
 # repository
 from repository.layer_filter_repo import get_layer_filter_query
 from repository.mappe_repo import prepared_statement_mappe
-
-
-
-from sqlalchemy import CursorResult
-
-
 
 logger = logging.getLogger(__name__)
 

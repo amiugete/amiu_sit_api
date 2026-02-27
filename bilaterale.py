@@ -1,26 +1,16 @@
-from fastapi import APIRouter, Query, Depends, HTTPException, status
+from fastapi import APIRouter, Query, Depends
 from typing import Any, List, Optional
-from business.permission import get_current_user, verifica_permesso_utenze
-from config.database import fetch_list_by_query,fetch_one_by_query
+from business.permission import get_current_user
+from config.database import fetch_list_by_query
 import logging
-from enum import Enum
-
-
 
 # i prepared statement per le query al database sono definiti nei repository corrispondenti 
 # alla tipologia di dato restituito (es. repository/vie_repo.py per le vie, repository/piazzole_repo.py per le piazzole, ecc.).
 from repository.bilaterali_repo import prepared_statement_bilaterali_albero,prepared_statement_bilaterali, prepared_statement_percorso_dettaglio
-from repository.utenze_repo import prepared_statement_utenze_UD_with_count,prepared_statement_utenze_UND_with_count
-from repository.macro_categorie_repo import prepared_statement_macro_categorie
 
+from config.database import fetch_list_by_query
 
-
-
-from config.database import fetch_list_by_query,fetch_list_by_query_mappe, fetch_list_by_query_strade
-
-
-
-from models.models import  PaginatedResponse, PercorsoDettaglio,Utenza,Bilaterali_albero,Bilaterali
+from models.models import PercorsoDettaglio,Bilaterali_albero,Bilaterali
 
 
 
