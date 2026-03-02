@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Query,Depends
 from business.permission import get_current_user
 from typing import Any, List, Optional, Union
+from business.utility import get_total_count_from_rows
 from config.database import fetch_list_by_query
 from models.models import  Deposito, ElementoAmiu,MezzoEkovision, ItinerarioPercorsoPsteriore, PaginatedResponse, PiazzolaAmiu, PosterioriPercorso
 from repository.depositi_repo import prepared_statement_depositi
@@ -57,13 +58,14 @@ def lista_piazzole_amiu(
             logger.info("Nessun risultato ottenuto dalla query.")
             return []
 
+    total = get_total_count_from_rows(piazzole_row)
     ## Creazione della lista delle piazzole amiu
     lista_piazzole_paginata = [PiazzolaAmiu(**row) for row in piazzole_row]
 
 
     if page is not None and size is not None and size > 0 and page > 0:
         result = PaginatedResponse[PiazzolaAmiu]()
-        result.total = lista_piazzole_paginata[0].total_count
+        result.total = total
         result.content = lista_piazzole_paginata
         result.page = page
         result.size = size
@@ -106,13 +108,16 @@ def lista_elementi_p(
             logger.info("Nessun risultato ottenuto dalla query.")
             return []
 
+
+    total = get_total_count_from_rows(elementi_row)
+
     ## Creazione della lista delle piazzole amiu
     lista_elementi = [ElementoAmiu(**row) for row in elementi_row]
 
 
     if page is not None and size is not None and size > 0 and page > 0:
         result = PaginatedResponse[ElementoAmiu]()
-        result.total = lista_elementi[0].total_count
+        result.total = total
         result.content = lista_elementi
         result.page = page
         result.size = size
@@ -155,12 +160,14 @@ def lista_percorsi_p(
     if listPercorsi_row is None or len(listPercorsi_row) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
         return []
+    # estrazione total_count colonna per paginazione
+    total = get_total_count_from_rows(listPercorsi_row)
 
     lista_percorsi_p = [PosterioriPercorso(**row) for row in listPercorsi_row]
     # Query per il ritorno del risultato paginato
     if page is not None and size is not None and size > 0 and page > 0:
         result = PaginatedResponse[PosterioriPercorso]()
-        result.total = lista_percorsi_p[0].total_count
+        result.total = total
         result.content = lista_percorsi_p
         result.page = page
         result.size = size
@@ -201,13 +208,14 @@ def lista_itinerari_p(
     if itinerari_row is None or len(itinerari_row) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
             return []
-
+    # estrazione total_count colonna per paginazione
+    total = get_total_count_from_rows(itinerari_row)
     ## Creazione della lista degli itinerari amiu
     lista_itinerari = [ItinerarioPercorsoPsteriore(**row) for row in itinerari_row]
 
     if page is not None and size is not None and size > 0 and page > 0:
         result = PaginatedResponse[ItinerarioPercorsoPsteriore]()
-        result.total = lista_itinerari[0].total_count
+        result.total = total
         result.content = lista_itinerari
         result.page = page
         result.size = size
@@ -245,12 +253,14 @@ def lista_mezzi_ekovision(
             logger.info("Nessun risultato ottenuto dalla query.")
             return []
 
+    # estrazione total_count colonna per paginazione
+    total = get_total_count_from_rows(mezzi_row)
     ## Creazione della lista dei mezzi ekovision
     lista_mezzi = [MezzoEkovision(**row) for row in mezzi_row]
 
     if page is not None and size is not None and size > 0 and page > 0:
         result = PaginatedResponse[MezzoEkovision]()
-        result.total = lista_mezzi[0].total_count
+        result.total = total
         result.content = lista_mezzi
         result.page = page
         result.size = size
@@ -286,6 +296,8 @@ def lista_depositi(
         logger.info("Nessun risultato ottenuto dalla query per /depositi.")
         return []
 
+    # estrazione total_count colonna per paginazione
+    total = get_total_count_from_rows(depositi_rows)
     lista_depositi_res = [Deposito(**row) for row in depositi_rows]
 
     if not lista_depositi_res:
@@ -293,7 +305,7 @@ def lista_depositi(
 
     if page is not None and size is not None and size > 0 and page > 0:
         result = PaginatedResponse[Deposito]()
-        result.total = lista_depositi_res[0].total_count
+        result.total = total
         result.content = lista_depositi_res
         result.page = page
         result.size = size

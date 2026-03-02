@@ -2,6 +2,7 @@ from fastapi import APIRouter, Query, Depends
 from typing import Any, List, Optional
 from business.permission import get_current_user
 from config.database import fetch_list_by_query
+from business.utility import get_total_count_from_rows
 import logging
 
 # i prepared statement per le query al database sono definiti nei repository corrispondenti 

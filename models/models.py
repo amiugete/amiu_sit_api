@@ -42,14 +42,12 @@ class Piazzola(BaseModel):
     num_elementi_privati: int
     lat: float
     lon: float
-    total_count: Optional[int] = None
 
 
 class Via(BaseModel):
     id_via: int
     nome: str
     id_comune: int
-    total_count: Optional[int] = None
 
 class Comune(BaseModel):
     id_comune: int
@@ -75,7 +73,6 @@ class Civico(BaseModel):
     lon: float
     insert_date: Optional[datetime] = None
     update_date: Optional[datetime] = None
-    total_count: Optional[int] = None
 
 
 class Quartiere(BaseModel):
@@ -137,7 +134,6 @@ class Utenza(BaseModel):
     zona_municipio: Optional[str] = None
     subzona_quartiere: Optional[str] = None
     data_cessazione: Optional[datetime] = None
-    totale_record: Optional[int] = None
 
 
 class Bilaterali_albero(BaseModel):
@@ -174,7 +170,6 @@ class PosterioriPercorso(BaseModel):
     versione_testata: Optional[int] = None
     periodicita: Optional[str] = None
     doppia_antenna: Optional[int] = None
-    total_count: Optional[int] = None
 
 class MezzoEkovision(BaseModel):
     id_scheda_ekovision: Optional[int] = None
@@ -182,7 +177,6 @@ class MezzoEkovision(BaseModel):
     orario_esecuzione: Optional[str] = None
     fascia_turno: Optional[str] = None
     sportello: Optional[str] = None
-    total_count: Optional[int] = None
 
 class MacroCategoria(BaseModel):
     classificazione: Optional[str] = None
@@ -202,7 +196,6 @@ class PiazzolaAmiu(BaseModel):
     data_inserimento: Optional[str] = None
     data_eliminazione: Optional[str] = None
     data_ultima_modifica: Optional[str] = None
-    total_count: Optional[int] = None
 
 class ElementoAmiu(BaseModel):
     id_elemento: int
@@ -218,7 +211,6 @@ class ElementoAmiu(BaseModel):
     data_inserimento: Optional[str]
     data_eliminazione: Optional[str] = None
     data_ultima_modifica: Optional[str] = None
-    total_count: Optional[int] = None
 
 class ItinerarioPercorsoPsteriore(BaseModel):
         cod_percorso: Optional[str] = None
@@ -232,7 +224,6 @@ class ItinerarioPercorsoPsteriore(BaseModel):
         ripasso: Optional[int] = None
         periodicita: Optional[str] = None
         data_ultima_modifica: Optional[str] = None
-        total_count: Optional[int] = None
 
 class Deposito(BaseModel):
     id_ut: int
@@ -243,7 +234,6 @@ class Deposito(BaseModel):
     data_inizio: str
     data_fine: Optional[str] = None
     data_ultima_modifica: str
-    total_count: Optional[int] = None
 
 
 class Point2Area(BaseModel):
@@ -272,7 +262,6 @@ class FasceEtaCivico(BaseModel):
     n60_70: Optional[int] = None
     n70_80: Optional[int] = None
     npiu80: Optional[int] = None
-    total_count: Optional[int] = None
 
 class PercorsoDettaglio(BaseModel):
     seq: Optional[int]

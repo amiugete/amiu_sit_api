@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Query, Depends, HTTPException, status
 from typing import Any, List, Optional, Union
 from business.permission import get_current_user, verifica_permesso_utenze
+from business.utility import get_total_count_from_rows
 from config.database import fetch_list_by_query
 
 from models.models import UtenzeDomestichePerCivico, UtenzeNonDomestichePerCivico,FasceEtaCivico, PaginatedResponse,MacroCategoria, PaginatedResponse, Utenza,Utenza
@@ -101,12 +102,12 @@ def lista_utenze(
             result.pages = 0
             return result
 
+            # estrazione total_count colonna per paginazione
+        total = get_total_count_from_rows(lista_dict_utenze)
+
         list_utenze = [Utenza(**row) for row in lista_dict_utenze]
-    
 
-        utenza = tuple(ut.civico for ut in list_utenze)
-
-        result.total = list_utenze[0].totale_record
+        result.total = total
         result.content = list_utenze
         result.page = page
         result.size = size
@@ -221,9 +222,13 @@ def lista_civici_fasce_eta(
             logger.info("Nessun risultato ottenuto dalla query.")
             return []
         
+
+
+            # estrazione total_count colonna per paginazione
+        total = get_total_count_from_rows(listCivici)
         listCivici = [FasceEtaCivico(**row) for row in listCivici]
         result = PaginatedResponse[FasceEtaCivico]()
-        result.total = listCivici[0].total_count if listCivici else 0
+        result.total = total
         result.content = listCivici
         result.page = page
         result.size = size

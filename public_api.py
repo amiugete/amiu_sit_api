@@ -6,6 +6,7 @@ import logging
 
 
 # database
+from business.utility import get_total_count_from_rows
 from config.database import fetch_list_by_query
 
 # modelli
@@ -149,10 +150,10 @@ def lista_vie(
         if listVie is None or len(listVie) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
             return []
-
+        total = get_total_count_from_rows(listVie)
         listVie = [Via(**row) for row in listVie]
         result = PaginatedResponse[Via]()
-        result.total = listVie[0].total_count if listVie else 0
+        result.total = total
         result.content = listVie
         result.page = page
         result.size = size
@@ -275,10 +276,11 @@ def lista_civici(
         if listCivici is None or len(listCivici) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
             return []
-        
+        # estrazione total_count colonna per paginazione
+        total = get_total_count_from_rows(listCivici)
         listCivici = [Civico(**row) for row in listCivici]
         result = PaginatedResponse[Civico]()
-        result.total = listCivici[0].total_count if listCivici else 0
+        result.total = total
         result.content = listCivici
         result.page = page
         result.size = size
@@ -291,7 +293,6 @@ def lista_civici(
         if listCivici is None or len(listCivici) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
             return []
-        
         listCivici = [Civico(**row) for row in listCivici]
         logger.info(f"Restituiti {len(listCivici)} civici.") 
         return listCivici
@@ -334,10 +335,12 @@ def lista_piazzole(
         if listPiazzole is None or len(listPiazzole) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
             return []
-
+        # estrazione total_count colonna per paginazione
+        total = get_total_count_from_rows(listPiazzole)
+        
         listPiazzole = [Piazzola(**row) for row in listPiazzole]
         result = PaginatedResponse[Piazzola]()
-        result.total = listPiazzole[0].total_count if listPiazzole else 0
+        result.total = total
         result.content = listPiazzole
         result.page = page
         result.size = size
