@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Form, HTTPException, status,Request #, Query, Depends
-
 from pydantic import SecretStr
 
+from business.email.email_engine import send_email_territorio
 from config.database import fetch_one_by_query,init_security_log_db,get_security_connection, init_security_log_user_db
-from models.models import SecurityLogUser, User,UserRoles,SecurityLog
+from models.models import SecurityLogUser, User,UserRoles,SecurityLog,Block
 from repository.users_repo import check_user_db, get_user_roles
 from repository.security_repo import get_security_log_by_user, insert_security_log_user, reset_attempts_and_ban_count_user, update_access_log, update_access_log_user, update_attempts0_block_24h_user, update_attempts0_block_30min,update_attempts0_block_24h, update_attempts0_block_30min_user, update_attempts0_block_30min_user, update_attempts0_block_permanent, get_security_log_by_ip,insert_security_log, update_attempts0_block_permanent_user,update_attempts_only,reset_attempts_and_ban_count, update_attempts_only_user
 import logging
@@ -13,7 +13,8 @@ from config.ldap_amiu import verifica_utente_amiu_LDAP
 from config.jwt_token_config import create_access_token
 import sqlite3
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Tuple
+
 
 logger = logging.getLogger(__name__)
 
@@ -112,8 +113,15 @@ async def login(request: Request,
     ##### Se LDAP fallisce inizia un sistema di blocco progressivo in base al numero di tentativi falliti per questo IP, con blocchi crescenti a 30 minuti, 24 ore e infine permanente dopo 3 tentativi falliti consecutivi. Se l'autenticazione ha successo, invece, si resetta il contatore dei tentativi e dei ban per questo IP. ######
     if not is_authenticated:
         # Gestione di blocchi progressivi in caso di fallimenti ripetuti, con log degli eventi di sicurezza
-        manage_security_log_on_failure(security_log, connection)
-        manage_security_log_user_on_failure(security_log_user, connection)
+        is_blocked_ip, block_type_ip = manage_security_log_on_failure(security_log, connection)
+        is_blocked_user, block_type_user = manage_security_log_user_on_failure(security_log_user, connection)
+
+        #Se l'utente è stato bloccato a causa dei tentativi falliti, invia un'email di notifica al territorio
+        if is_blocked_user:
+            send_email_on_block(username, block_type_user)
+        if is_blocked_ip:
+            send_email_on_block(ip, block_type_ip)
+
         logger.warning(f"Autenticazione fallita per l'utente {username}: {msg}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -219,14 +227,15 @@ def reset_log_security_user(conn: sqlite3.Connection, user: str):
         cursor.execute(reset_attempts_and_ban_count_user(), {"user": user})
         conn.commit()
 
-def manage_security_log_on_failure(securityLog_record: SecurityLog, conn: sqlite3.Connection):
+def manage_security_log_on_failure(securityLog_record: SecurityLog, conn: sqlite3.Connection)-> Tuple[bool, Block]:
     """
     Gestisce il log di sicurezza in caso di fallimento dell'autenticazione, implementando un sistema di blocco progressivo:
     - Se attempts < 3: incrementa solo il contatore dei tentativi falliti (attempts).
     - Se attempts == 3 e ban_count == 0: blocca l'IP per 30 minuti (primo blocco temporaneo).
     - Se attempts == 3 e ban_count == 1: blocca l'IP per 24 ore (secondo blocco temporaneo).
     - Se attempts == 3 e ban_count >= 2: blocco permanente (imposta una data molto lontana).
-    Dopo ogni blocco, il contatore attempts viene azzerato e ban_count incrementato.
+    Dopo ogni blocco, il contatore attempts viene azzerato e ban_count incrementato.<br>
+    Ritorna una tupla (is_blocked: bool, block_type: Block) per indicare se l'IP è stato bloccato e il tipo di blocco applicato.
     """
     cursor = conn.cursor()
     if securityLog_record:
@@ -235,27 +244,34 @@ def manage_security_log_on_failure(securityLog_record: SecurityLog, conn: sqlite
             new_attempts = securityLog_record.attempts + 1
             cursor.execute(update_attempts_only(), {"attempts": new_attempts, "ip_address": securityLog_record.ip_address})
             conn.commit()
+            return False, None
         # Caso: 3 tentativi falliti, primo blocco temporaneo di 30 minuti
         elif securityLog_record.attempts == 3 and securityLog_record.ban_count == 0:
             cursor.execute(update_attempts0_block_30min(), { "ip_address": securityLog_record.ip_address})
             conn.commit()
+            return True, Block.MIN_30
         # Caso: 3 tentativi falliti, secondo blocco temporaneo di 24 ore
         elif securityLog_record.attempts == 3 and securityLog_record.ban_count == 1:
             cursor.execute(update_attempts0_block_24h(), {"ip_address": securityLog_record.ip_address})
             conn.commit()
+            return True, Block.H_24
         # Caso: 3 tentativi falliti, blocco permanente
         elif securityLog_record.attempts == 3 and securityLog_record.ban_count >= 2:
             cursor.execute(update_attempts0_block_permanent(), {"ip_address": securityLog_record.ip_address})
             conn.commit()
+            return True, Block.PERMANENT
+        
+        return False, None
 
-def manage_security_log_user_on_failure(securityLog_record: SecurityLogUser, conn: sqlite3.Connection):
+def manage_security_log_user_on_failure(securityLog_record: SecurityLogUser, conn: sqlite3.Connection)-> Tuple[bool, Block]:
     """
     Gestisce il log di sicurezza in caso di fallimento dell'autenticazione, implementando un sistema di blocco progressivo:
     - Se attempts < 3: incrementa solo il contatore dei tentativi falliti (attempts).
     - Se attempts == 3 e ban_count == 0: blocca l'IP per 30 minuti (primo blocco temporaneo).
     - Se attempts == 3 e ban_count == 1: blocca l'IP per 24 ore (secondo blocco temporaneo).
     - Se attempts == 3 e ban_count >= 2: blocco permanente (imposta una data molto lontana).
-    Dopo ogni blocco, il contatore attempts viene azzerato e ban_count incrementato.
+    Dopo ogni blocco, il contatore attempts viene azzerato e ban_count incrementato.<br>
+    Ritorna una tupla (is_blocked: bool, block_type: Block) per indicare se l'utente è stato bloccato e di che tipo di blocco si tratta, in modo da poter eventualmente inviare notifiche o loggare l'evento.
     """
     cursor = conn.cursor()
     if securityLog_record:
@@ -264,18 +280,31 @@ def manage_security_log_user_on_failure(securityLog_record: SecurityLogUser, con
             new_attempts = securityLog_record.attempts + 1
             cursor.execute(update_attempts_only_user(), {"attempts": new_attempts, "user": securityLog_record.user})
             conn.commit()
+            return False, None
         # Caso: 3 tentativi falliti, primo blocco temporaneo di 30 minuti
         elif securityLog_record.attempts == 3 and securityLog_record.ban_count == 0:
             cursor.execute(update_attempts0_block_30min_user(), { "user": securityLog_record.user})
             conn.commit()
+            return True, Block.MIN_30
         # Caso: 3 tentativi falliti, secondo blocco temporaneo di 24 ore
         elif securityLog_record.attempts == 3 and securityLog_record.ban_count == 1:
             cursor.execute(update_attempts0_block_24h_user(), {"user": securityLog_record.user})
             conn.commit()
+            return True, Block.H_24
         # Caso: 3 tentativi falliti, blocco permanente
         elif securityLog_record.attempts == 3 and securityLog_record.ban_count >= 2:
             cursor.execute(update_attempts0_block_permanent_user(), {"user": securityLog_record.user})
             conn.commit()
+            return True, Block.PERMANENT
+        
+        return False, None
+    
+
+def send_email_on_block(block_ref:str, block_type: Block):
+    """Invia un'email di notifica al territorio quando un utente o un IP viene bloccato a causa di tentativi di accesso falliti."""
+    subject = f"{block_type.value} per {block_ref}"
+    body = f"{block_ref} è stato bloccato con {block_type.value} a causa di tentativi di accesso falliti."
+    send_email_territorio(subject, body)    
 
 
 def register_access_log(conn: sqlite3.Connection, ip: str):

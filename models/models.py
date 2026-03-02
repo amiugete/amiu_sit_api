@@ -1,11 +1,9 @@
-
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-from pydantic_geojson import LineStringModel
+from enum import Enum
+from pydantic import BaseModel, field_validator
 from typing import Optional, Any, TypeVar, Generic
 from datetime import datetime
 from shapely import wkb
 import json
-from zoneinfo import ZoneInfo
 
 T = TypeVar('T')
 
@@ -391,7 +389,10 @@ class LayerFilterResponse(BaseModel):
 
 
 
-
+class Block(Enum):
+    MIN_30 = "Blocco di 30 minuti"
+    H_24 = "Blocco di 24 ore"
+    PERMANENT = "Blocco permanente"
 
 
 

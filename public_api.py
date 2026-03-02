@@ -1,21 +1,19 @@
-from fastapi import APIRouter, Query, HTTPException,Depends
-from pydantic_geojson import FeatureModel, LineStringModel
+from fastapi import APIRouter, Query, Depends
+from business.email.email_engine import send_email_territorio
 from business.permission import get_current_user
 from typing import Any, List, Optional, Union
-from enum import Enum
 import logging
 
 
 # database
-from config.database import fetch_list_by_query, fetch_list_by_query_strade
+from config.database import fetch_list_by_query
 
 # modelli
-from models.models import  FasceEtaCivico, GeoJSNONModel,LayerFilterResponse, MacroCategoria, Mappa, Municipio, MyFutureModel, Piazzola, PaginatedResponse, PaginatedGeoJSONResponse, Via, Comune, Civico, Quartiere, Ambito, PointOfInterest
+from models.models import   GeoJSNONModel, Municipio, MyFutureModel, Piazzola, PaginatedResponse, PaginatedGeoJSONResponse, Via, Comune, Civico, Quartiere, Ambito, PointOfInterest
 
 
 
 #repository
-from repository.layer_filter_repo import get_layer_filter_query
 from repository.municipi_repo import prepared_statement_municipi_genova
 from repository.vie_repo import prepared_statement_vie, prepared_statement_vie_with_count
 from repository.piazzole_repo import prepared_statement_piazzole, prepared_statement_piazzole_with_count
@@ -23,7 +21,6 @@ from repository.comuni_repo import prepared_statement_comuni
 from repository.civici_repo import prepared_statement_civici_with_count, prepared_statement_civici
 from repository.quartieri_repo import prepared_statement_quartieri
 from repository.ambiti_repo import prepared_statement_ambiti
-from repository.mappe_repo import prepared_statement_mappe
 from repository.aste_repo_geoloc import prepared_statement_aste_geoloc
 from repository.point_of_interest_repo import prepared_statement_pointofinterest
 from sqlalchemy import CursorResult
@@ -57,8 +54,6 @@ def lista_ambiti(
     listAmbiti = [Ambito(**row) for row in listAmbiti]
     logger.info(f"Restituiti {len(listAmbiti)} ambiti.")
     return listAmbiti
-
-
 
 ##############################################################
 @router.get("/comuni", response_model=List[Comune],
