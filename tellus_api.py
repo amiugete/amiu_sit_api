@@ -94,7 +94,7 @@ def lista_elementi_p(
     elementi_row: List[dict] | None
     query_select = ''
     offset = 0
-    limit = 1000
+    limit = 10000
 
     if page is not None and size is not None and size > 0 and page > 0:
         offset = (page - 1) * size

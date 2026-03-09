@@ -197,6 +197,28 @@ class PiazzolaAmiu(BaseModel):
     data_eliminazione: Optional[str] = None
     data_ultima_modifica: Optional[str] = None
 
+class Elemento(BaseModel):
+    id_piazzola: int
+    id_elemento: int
+    ordine_rifiuto: Optional[int] = None
+    desc_rifiuto: Optional[str] = None
+    colore_rifiuto: Optional[str] = None
+    tipo_elemento: Optional[int] = None
+    desc_tipo_elemento: Optional[str] = None
+    volume: Optional[float] = None
+    tipologia_elemento: Optional[str] = None
+    tipo_raccolta: Optional[str] = None
+    matricola: Optional[str] = None
+    tag: Optional[str] = None
+    serratura: Optional[int] = None
+    matricola_serratura: Optional[str] = None
+    data_ultima_modifica: Optional[datetime] = None
+    id_macro_categoria: Optional[int] = None
+    macro_categoria: Optional[str] = None
+    descrizione: Optional[str] = None
+    nome_attivita: Optional[str] = None
+    nota_privati: Optional[str] = None
+
 class ElementoAmiu(BaseModel):
     id_elemento: int
     id_piazzola: Optional[int]

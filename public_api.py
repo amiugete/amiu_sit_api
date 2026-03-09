@@ -10,7 +10,7 @@ from business.utility import get_total_count_from_rows
 from config.database import fetch_list_by_query
 
 # modelli
-from models.models import   GeoJSNONModel, Municipio, MyFutureModel, Piazzola, PaginatedResponse, PaginatedGeoJSONResponse, Via, Comune, Civico, Quartiere, Ambito, PointOfInterest
+from models.models import   GeoJSNONModel, Municipio, MyFutureModel, Piazzola, PaginatedResponse, PaginatedGeoJSONResponse, Via, Comune, Civico, Quartiere, Ambito, PointOfInterest, Elemento
 
 
 
@@ -18,6 +18,7 @@ from models.models import   GeoJSNONModel, Municipio, MyFutureModel, Piazzola, P
 from repository.municipi_repo import prepared_statement_municipi_genova
 from repository.vie_repo import prepared_statement_vie, prepared_statement_vie_with_count
 from repository.piazzole_repo import prepared_statement_piazzole, prepared_statement_piazzole_with_count
+from repository.elementi_repo import prepared_statement_elementi, prepared_statement_elementi_with_count
 from repository.comuni_repo import prepared_statement_comuni
 from repository.civici_repo import prepared_statement_civici_with_count, prepared_statement_civici
 from repository.quartieri_repo import prepared_statement_quartieri
@@ -363,8 +364,63 @@ def lista_piazzole(
 
 
 
+##############################################################
+@router.get("/elementi", response_model=Union[List[Elemento], PaginatedResponse[Elemento]],
+            description="""Recupera la lista degli elementi associati alle piazzole con filtro opzionale.
+            Richiede autenticazione (Bearer Token).
+            Paginazione opzionale gestita tramite parametri page e size nella request.""")
+def lista_elementi(
+    page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
+    size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
+    id_piazzola: Optional[int] = Query(None, description="Filtra per ID piazzola"),
+    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD", pattern=r"^\d{8}$"),
+    payload: dict[str, Any] = Depends(get_current_user)
+):
+    logger.info("Ricevuta richiesta GET /elementi")
+    listElementi: CursorResult[Any]
+    query_select = ''
+    offset = None
+    limit = None
 
+    if page is not None and size is not None and size > 0:
+        offset = (page - 1) * size
+        limit = size
 
+    params = {"id_piazzola": id_piazzola, "last_update": last_update}
+
+    # Query per il ritorno del risultato paginato
+    if limit is not None and offset is not None:
+        query_select = prepared_statement_elementi_with_count()
+        listElementi = fetch_list_by_query(query_select, {**params, "limit": limit, "offset": offset})
+
+        if listElementi is None or len(listElementi) == 0:
+            logger.info("Nessun risultato ottenuto dalla query.")
+            return []
+        # estrazione total_count colonna per paginazione
+        total = get_total_count_from_rows(listElementi)
+
+        listElementi = [Elemento(**row) for row in listElementi]
+        result = PaginatedResponse[Elemento]()
+        result.total = total
+        result.content = listElementi
+        result.page = page
+        result.size = size
+        result.pages = (result.total + size - 1) // size if size else 0
+        logger.info(f"Restituiti {result.total} elementi.")
+    # Query per il ritorno del risultato non paginato
+    else:
+        query_select = prepared_statement_elementi()
+        listElementi = fetch_list_by_query(query_select, {**params, "limit": limit, "offset": offset})
+
+        if listElementi is None or len(listElementi) == 0:
+            logger.info("Nessun risultato ottenuto dalla query.")
+            return []
+
+        listElementi = [Elemento(**row) for row in listElementi]
+        logger.info(f"Restituiti {len(listElementi)} elementi.")
+        return listElementi
+
+    return result
 
 @router.get("/POI", response_model=List[PointOfInterest],
             description="""Recupera i dettagli dei Punti di Interesse (Rimesse, UT e Scarichi vari). 
