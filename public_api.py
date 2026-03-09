@@ -325,7 +325,7 @@ def lista_piazzole(
         offset = (page - 1) * size
         limit = size
 
-    params = {"pap": pap, "via": id_via, "comune": id_comune, "municipio": id_municipio}
+    params = {"pap": pap if pap is not None else 0, "via": id_via, "comune": id_comune, "municipio": id_municipio}
 
     # Query per il ritorno del risultato paginato
     if limit is not None and offset is not None:
