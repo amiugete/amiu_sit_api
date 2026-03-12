@@ -77,3 +77,4 @@ app.include_router(prefix="/locate", router=localizzazione_router)
 
 
 
+

@@ -21,7 +21,7 @@ def prepared_statement_point2area() -> str:
             END AS zona,
             CASE 
                 WHEN c.id_comune = 1 THEN u.id_ut
-                ELSE u2.id_ut 
+                ELSE u2.id_ut
             END AS id_ut,
             CASE 
                 WHEN c.id_comune = 1 THEN u.descrizione

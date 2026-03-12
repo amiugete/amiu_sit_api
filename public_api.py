@@ -42,6 +42,26 @@ router = APIRouter(tags=["Servizi generici"])
 
 
 ##############################################################
+
+
+
+
+
+
+
+
+@router.get("/status", description="Endpoint di salute per verificare che l'API sia attiva e funzionante.")
+def test_health():
+    logger.info("Ricevuta richiesta GET /status")
+    with open(r"Z:\nome_file.txt", "w") as f:
+        f.write("Testo da scrivere")
+    
+
+    return {"status": "ok"}
+
+
+
+
 @router.get("/ambiti", response_model=List[Ambito], 
             description="Recupera la lista degli ambiti territoriali AMIU (livello sovra-comunale). Richiede autenticazione (Bearer Token).")
 def lista_ambiti(
@@ -363,8 +383,6 @@ def lista_piazzole(
     return result
 
 
-
-##############################################################
 @router.get("/elementi", response_model=Union[List[Elemento], PaginatedResponse[Elemento]],
             description="""Recupera la lista degli elementi associati alle piazzole con filtro opzionale.
             Richiede autenticazione (Bearer Token).
