@@ -17,7 +17,7 @@ router = APIRouter(tags=["Servizi mobile"])
 
 @router.post("/piazzola/upload/foto", description="Effettua un upload dell'immagine di una piazzola verifica se esiste e la crea o la sostituisce qualora esistesse. Richiede autenticazione (Bearer Token)."
 )
-def get_area_from_point(
+def upload_foto_piazzola(
     payload: dict[str, Any] = Depends(get_current_user), 
     imageBody: ImmagineUploadFromSitMobile = Body(..., description="Dati dell'immagine da caricare, inclusi il nome del file e il contenuto in base64")):
     """
