@@ -5,6 +5,7 @@ import logging
 
 # importo i router dai vari moduli
 from public_api import router as public_router
+from mobile_api import router as mobile_router
 from duale_api import router as duale_router
 from idea_api import router as idea_router
 from bilaterale import router as bilaterale_router
@@ -69,6 +70,7 @@ app.include_router(prefix="/auth", tags=["Servizi di autenticazione"], router=au
 
 # Definizione dei router per i servizi ad con accesso autorizzato
 app.include_router(prefix="", router=public_router)
+app.include_router(prefix="/mobile", router=mobile_router)
 app.include_router(prefix="/duale", router=duale_router)
 app.include_router(prefix="/utenze", router=idea_router)
 app.include_router(prefix="/bilaterale", router=bilaterale_router)

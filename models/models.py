@@ -406,4 +406,9 @@ class Block(Enum):
     PERMANENT = "Blocco permanente"
 
 
+class ImmagineUploadFromSitMobile(BaseModel):
+    id_piazzola: int
+    image: str
+
+
 

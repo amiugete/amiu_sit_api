@@ -40,27 +40,7 @@ router = APIRouter(tags=["Servizi generici"])
 
 # nel main richiamerò questi router e li inizializzo
 
-
 ##############################################################
-
-
-
-
-
-
-
-
-@router.get("/status", description="Endpoint di salute per verificare che l'API sia attiva e funzionante.")
-def test_health():
-    logger.info("Ricevuta richiesta GET /status")
-    with open(r"Z:\nome_file.txt", "w") as f:
-        f.write("Testo da scrivere")
-    
-
-    return {"status": "ok"}
-
-
-
 
 @router.get("/ambiti", response_model=List[Ambito], 
             description="Recupera la lista degli ambiti territoriali AMIU (livello sovra-comunale). Richiede autenticazione (Bearer Token).")
