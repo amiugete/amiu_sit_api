@@ -43,6 +43,29 @@ class Piazzola(BaseModel):
     lat: float
     lon: float
 
+class PiazzolaMobile(BaseModel):
+    id_piazzola: int
+    id_comune: int
+    comune: str
+    id_municipio: Optional[int]
+    municipio: Optional[str]
+    id_quartiere: Optional[int]
+    quartiere: Optional[str]
+    cod_via: int
+    via: str
+    id_asta: Optional[int] = None
+    numero_civico: Optional[Any] = None
+    riferimento: Optional[str]
+    note: Optional[str]
+    foto: Optional[int]
+    pap: Optional[int] = None   
+    num_elementi: Optional[int] = None
+    num_elementi_privati: Optional[int] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    data_ultima_modifica: Optional[Any] = None
+    data_eliminazione: Optional[Any] = None
+
 
 class Via(BaseModel):
     id_via: int
@@ -409,6 +432,5 @@ class Block(Enum):
 class ImmagineUploadFromSitMobile(BaseModel):
     id_piazzola: int
     image: str
-
 
 

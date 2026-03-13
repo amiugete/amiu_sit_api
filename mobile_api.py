@@ -1,12 +1,16 @@
+
 from fastapi import APIRouter, Query, HTTPException,Depends,Response,Body
 from business.permission import get_current_user
-from typing import Any
-from models.models import ImmagineUploadFromSitMobile
+from typing import Any, List, Optional
+from config.database import fetch_list_by_query
+from models.models import ImmagineUploadFromSitMobile,PiazzolaMobile
 import logging
 from pathlib import Path
 import base64
 import os
 from dotenv import load_dotenv
+
+from repository.piazzole_repo import prepared_statement_piazzole, prepared_statement_piazzole_mobile, prepared_statement_piazzole_with_count
 
 load_dotenv()
 
@@ -37,4 +41,33 @@ def upload_foto_piazzola(
     file_path.write_bytes(file_bytes)
 
     return Response(status_code=204)
+
+
+
+####################### Servizio delle piazzole con data di ultimo aggiornamento e data eliminazione #######################################
+@router.get("/piazzole", response_model=List[PiazzolaMobile],
+            description="""Recupera la lista delle piazzole per l'applicazione mobile con filtri opzionali.
+            Richiede autenticazione (Bearer Token).""", )
+def lista_piazzole(
+    id_comune: Optional[int] = Query(None, description="Filtra per comune"),
+    id_via: Optional[int] = Query(None, description="Filtra per ID della via"),
+    last_update: Optional[str] = Query(None, description="Filtra per data di ultimo aggiornamento (formato YYYYMMDD)"),
+    data_eliminazione: Optional[str] = Query(None, description="Filtra per data di eliminazione (formato YYYYMMDD)"),
+    payload: dict[str, Any] = Depends(get_current_user)
+):
+    logger.info("Ricevuta richiesta GET /piazzole")
+    
+    params = { "via": id_via, "comune": id_comune}
+
+    query_select = prepared_statement_piazzole_mobile()
+    listPiazzole = fetch_list_by_query(query_select, {**params})
+
+    if listPiazzole is None or len(listPiazzole) == 0:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+
+    listPiazzole = [PiazzolaMobile(**row) for row in listPiazzole]
+    logger.info(f"Restituiti {len(listPiazzole)} piazzole.") 
+    
+    return listPiazzole
 
