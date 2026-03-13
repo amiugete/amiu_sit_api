@@ -51,13 +51,13 @@ def upload_foto_piazzola(
 def lista_piazzole(
     id_comune: Optional[int] = Query(None, description="Filtra per comune"),
     id_via: Optional[int] = Query(None, description="Filtra per ID della via"),
-    last_update: Optional[str] = Query(None, description="Filtra per data di ultimo aggiornamento (formato YYYYMMDD)"),
-    data_eliminazione: Optional[str] = Query(None, description="Filtra per data di eliminazione (formato YYYYMMDD)"),
+    last_update: Optional[str] = Query(None, description="Filtra per data di ultimo aggiornamento (formato YYYYMMDDHHMM)"),
+    data_eliminazione: Optional[str] = Query(None, description="Filtra per data di eliminazione (formato YYYYMMDDHHMM)"),
     payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /piazzole")
     
-    params = { "via": id_via, "comune": id_comune}
+    params = { "via": id_via, "comune": id_comune, "last_update": last_update, "data_eliminazione": data_eliminazione }
 
     query_select = prepared_statement_piazzole_mobile()
     listPiazzole = fetch_list_by_query(query_select, {**params})

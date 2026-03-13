@@ -160,4 +160,6 @@ def prepared_statement_piazzole_mobile() -> str:
         where p.data_eliminazione is null
         and (:via is null or v.id_via = :via)
         and (:comune is null or c.id_comune = :comune)
+        and (:last_update is null or to_char(p.data_ultima_modifica,'YYYYMMDDHHMM') > :last_update)
+        and (:data_eliminazione is null or to_char(p.data_eliminazione,'YYYYMMDDHHMM') > :data_eliminazione)
     """
