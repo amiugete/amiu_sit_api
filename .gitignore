@@ -18,5 +18,4 @@ app.log
 *.log
 fastapi-service.xml
 
-logs/*.log
-logs/*.log.*
+logs/.
