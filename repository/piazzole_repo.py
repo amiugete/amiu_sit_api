@@ -157,9 +157,8 @@ def prepared_statement_piazzole_mobile() -> str:
             GROUP BY t.tipo_elemento, tr.tipo_rifiuto, te.tipologia_elemento, p.id_piazzola
             ORDER BY tr.nome, t.descrizione
         ) as foo on p.id_piazzola = foo.id_piazzola
-        where p.data_eliminazione is null
-        and (:via is null or v.id_via = :via)
+        where (:via is null or v.id_via = :via)
         and (:comune is null or c.id_comune = :comune)
-        and (:last_update is null or to_char(p.data_ultima_modifica,'YYYYMMDDHHMM') > :last_update)
-        and (:data_eliminazione is null or to_char(p.data_eliminazione,'YYYYMMDDHHMM') > :data_eliminazione)
+        and (:last_update is null or to_char(p.data_ultima_modifica,'YYYYMMDDHH24MI') > :last_update)
+        and (:data_eliminazione is null or to_char(p.data_eliminazione,'YYYYMMDDHH24MI') > :data_eliminazione)
     """

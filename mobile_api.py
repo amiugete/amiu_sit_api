@@ -3,13 +3,14 @@ from fastapi import APIRouter, Query, HTTPException,Depends,Response,Body
 from business.permission import get_current_user
 from typing import Any, List, Optional
 from config.database import fetch_list_by_query
-from models.models import ImmagineUploadFromSitMobile,PiazzolaMobile
+from models.models import AstaMobile, ImmagineUploadFromSitMobile,PiazzolaMobile
 import logging
 from pathlib import Path
 import base64
 import os
 from dotenv import load_dotenv
 
+from repository.aste_repo_geoloc import prepared_statement_aste_mobile
 from repository.piazzole_repo import prepared_statement_piazzole, prepared_statement_piazzole_mobile, prepared_statement_piazzole_with_count
 
 load_dotenv()
@@ -70,4 +71,30 @@ def lista_piazzole(
     logger.info(f"Restituiti {len(listPiazzole)} piazzole.") 
     
     return listPiazzole
+
+
+####################### Servizio delle aste con data di ultimo aggiornamento e data eliminazione #######################################
+@router.get("/aste", response_model=List[AstaMobile],
+            description="""Recupera la lista delle aste per l'applicazione mobile con filtri opzionali.
+            Richiede autenticazione (Bearer Token).""", )
+def lista_aste(
+    id_via: Optional[int] = Query(None, description="Filtra per ID della via"),
+    data_ultima_modifica: Optional[str] = Query(None, description="Filtra per data di ultimo aggiornamento (formato YYYYMMDDHHmm)"),
+    payload: dict[str, Any] = Depends(get_current_user)
+):
+    logger.info("Ricevuta richiesta GET /aste")
+    
+    params = { "id_via": id_via, "data_ultima_modifica": data_ultima_modifica }
+
+    query_select = prepared_statement_aste_mobile()
+    listAste = fetch_list_by_query(query_select, {**params})
+
+    if listAste is None or len(listAste) == 0:
+        logger.info("Nessun risultato ottenuto dalla query.")
+        return []
+
+    listAste = [AstaMobile(**row) for row in listAste]
+    logger.info(f"Restituiti {len(listAste)} aste.") 
+    
+    return listAste
 

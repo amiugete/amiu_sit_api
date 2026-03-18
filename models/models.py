@@ -1,3 +1,5 @@
+# Classe per il risultato della query prepared_statement_aste_mobile
+from typing import Optional
 from enum import Enum
 from pydantic import BaseModel, field_validator
 from typing import Optional, Any, TypeVar, Generic
@@ -343,6 +345,16 @@ class GeoJSNONModel(BaseModel):
     size: Optional[int] = None
     pages: Optional[int] = None
 
+class AstaMobile(BaseModel):
+    id_asta: Optional[int] = None
+    id_via: Optional[int] = None
+    id_municipio: Optional[int] = None
+    id_quartiere: Optional[int] = None
+    lung_db_m: Optional[float] = None
+    lungh_geom_m: Optional[float] = None
+    data_last_update: Optional[str] = None
+    data_eliminazione: Optional[str] = None
+    geom: Optional[str] = None
 
 class MyFutureModel(BaseModel):
     type: str = 'Feature'
