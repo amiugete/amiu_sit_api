@@ -4,7 +4,7 @@ def prepared_statement_vie() -> str:
         select id_via, nome, id_comune from topo.vie v
         where (:comune is null or id_comune = :comune)
         order by nome
-        limit coalesce(:limit, 10000)
+        limit coalesce(:limit, 1000000)
         offset coalesce(:offset,0)
     """
 def prepared_statement_vie_with_count() -> str:
@@ -15,7 +15,7 @@ def prepared_statement_vie_with_count() -> str:
             FROM topo.vie v
             WHERE (:comune IS NULL OR id_comune = :comune)
             ORDER BY nome
-            LIMIT COALESCE(:limit, 10000)
+            LIMIT COALESCE(:limit, 1000000)
             OFFSET COALESCE(:offset, 0)
         )
         SELECT (SELECT COUNT(*) FROM topo.vie v WHERE (:comune IS NULL OR id_comune = :comune)) AS total_count, *
