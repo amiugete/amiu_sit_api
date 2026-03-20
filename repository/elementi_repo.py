@@ -76,6 +76,6 @@ def prepared_statement_elementi_with_count() -> str:
         SELECT (SELECT COUNT(*) FROM queryElementi) AS total_count, *
         FROM queryElementi
         ORDER BY id_piazzola, ordine_rifiuto, volume
-        LIMIT COALESCE(:limit, 10000)
+        LIMIT COALESCE(:limit, 1000000)
         OFFSET COALESCE(:offset, 0);
     """
