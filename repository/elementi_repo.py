@@ -32,7 +32,7 @@ def prepared_statement_elementi() -> str:
           AND (:id_piazzola IS NULL OR e.id_piazzola = :id_piazzola)
           AND te.tipologia_elemento NOT IN ('N')
         ORDER BY e.id_piazzola, tr.ordinamento, te.volume
-        LIMIT COALESCE(:limit, 10000)
+        LIMIT COALESCE(:limit, 1000000)
         OFFSET COALESCE(:offset, 0)
     """
 
