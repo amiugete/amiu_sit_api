@@ -1,4 +1,3 @@
-# Classe per il risultato della query prepared_statement_aste_mobile
 from typing import Optional
 from enum import Enum
 from pydantic import BaseModel, field_validator
@@ -45,28 +44,26 @@ class Piazzola(BaseModel):
     lat: float
     lon: float
 
+
 class PiazzolaMobile(BaseModel):
     id_piazzola: int
-    id_comune: int
-    comune: str
+    id_comune: Optional[int]
     id_municipio: Optional[int]
-    municipio: Optional[str]
     id_quartiere: Optional[int]
-    quartiere: Optional[str]
     cod_via: int
-    via: str
-    id_asta: Optional[int] = None
-    numero_civico: Optional[Any] = None
+    id_asta: Optional[int]
+    numero_civico: Optional[Any]
     riferimento: Optional[str]
     note: Optional[str]
     foto: Optional[int]
-    pap: Optional[int] = None   
+    pap: Optional[int] = None
     num_elementi: Optional[int] = None
     num_elementi_privati: Optional[int] = None
     lat: Optional[float] = None
     lon: Optional[float] = None
-    data_ultima_modifica: Optional[Any] = None
-    data_eliminazione: Optional[Any] = None
+    # geom: Optional[str] = None  # geom può essere una stringa WKT o binario, adattare se necessario
+    data_ultima_modifica: Optional[Any] = None  # adattare a datetime se serve
+    data_eliminazione: Optional[Any] = None     # adattare a datetime se serve   
 
 
 class Via(BaseModel):
