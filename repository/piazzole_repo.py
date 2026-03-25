@@ -146,3 +146,46 @@ left join topo.municipi m on m.id_municipio = q.id_municipio
         and (:data_eliminazione is null or to_char(p.data_eliminazione,'YYYYMMDDHH24MI') > :data_eliminazione)
     """
 
+def prepared_statement_piazzole_mobile_all_date() -> str:
+    """
+    Query per il recupero delle piazzole per l'app mobile del SIT, con filtri opzionali.
+    """
+    return """
+select p.id_piazzola,
+c.id_comune,
+m.id_municipio,
+q.id_quartiere,
+v.id_via as cod_via,
+p.id_asta,
+p.numero_civico,
+p.riferimento,
+p.note,
+p.foto,
+case
+	when (select count(id_elemento) from elem.elementi where id_piazzola = p.id_piazzola) =
+	(select count(id_elemento) from elem.elementi_privati where id_elemento in
+		(select id_elemento from elem.elementi where id_piazzola = p.id_piazzola)
+	)  then 1
+	else 0
+end pap,
+	(select count(id_elemento) from elem.elementi where id_piazzola = p.id_piazzola) as num_elementi,
+	(select count(id_elemento) from elem.elementi_privati where id_elemento in
+		(select id_elemento from elem.elementi where id_piazzola = p.id_piazzola)
+	) as num_elementi_privati,
+st_y(st_transform(p2.geoloc,4326)) as lat, 
+st_x(st_transform(p2.geoloc,4326)) as lon,
+st_transform(p2.geoloc,4326) as geom, /* ESPORTAZIONE BINARIO da capire se gestito dalle librerie capacitor*/
+to_char(greatest(p.data_ultima_modifica , p2.data_ultima_modifica),'YYYYMMDDHH24MI') as data_ultima_modifica,
+to_char(p.data_eliminazione,'YYYYMMDDHH24MI') as data_eliminazione /* da VISUALIZZARE SOLO QUELLE CON DATA ELIMINAZIONE NULL*/
+from elem.piazzole p
+join geo.piazzola p2 on p.id_piazzola = p2.id
+join elem.aste a on a.id_asta = p.id_asta
+join topo.vie v on v.id_via = a.id_via  
+join topo.comuni c on v.id_comune = c.id_comune
+left join topo.quartieri q on a.id_quartiere = q.id_quartiere
+left join topo.municipi m on m.id_municipio = q.id_municipio
+        where (:via is null or v.id_via = :via)
+        and (:comune is null or c.id_comune = :comune)
+        and (to_char(p.data_ultima_modifica,'YYYYMMDDHH24MI') > :last_update OR to_char(p.data_eliminazione,'YYYYMMDDHH24MI') > :data_eliminazione)
+    """
+

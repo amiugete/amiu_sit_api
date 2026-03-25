@@ -11,7 +11,7 @@ import os
 from dotenv import load_dotenv
 
 from repository.aste_repo_geoloc import prepared_statement_aste_mobile
-from repository.piazzole_repo import prepared_statement_piazzole, prepared_statement_piazzole_mobile, prepared_statement_piazzole_with_count
+from repository.piazzole_repo import prepared_statement_piazzole, prepared_statement_piazzole_mobile, prepared_statement_piazzole_mobile_all_date, prepared_statement_piazzole_with_count
 
 load_dotenv()
 
@@ -60,7 +60,7 @@ def lista_piazzole(
     
     params = { "via": id_via, "comune": id_comune, "last_update": last_update, "data_eliminazione": data_eliminazione }
 
-    query_select = prepared_statement_piazzole_mobile()
+    query_select = prepared_statement_piazzole_mobile_all_date() if last_update is not None and data_eliminazione is not None else prepared_statement_piazzole_mobile()
     listPiazzole = fetch_list_by_query(query_select, {**params})
 
     if listPiazzole is None or len(listPiazzole) == 0:
@@ -68,7 +68,7 @@ def lista_piazzole(
         return []
 
     listPiazzole = [PiazzolaMobile(**row) for row in listPiazzole]
-    logger.info(f"Restituiti {len(listPiazzole)} piazzole.") 
+    logger.info(f"Restituiti {len(listPiazzole)} piazzole.")
     
     return listPiazzole
 
