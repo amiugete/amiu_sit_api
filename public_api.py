@@ -374,7 +374,7 @@ def lista_elementi(
     last_update: Optional[str] = Query(
         None,
         description="Filtra per ultimo aggiornamento nel formato YYYYMMDDHHMM (es. 202603301230)",
-        pattern=r"^(?:19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])([01]\\d|2[0-3])([0-5]\\d)$"
+        pattern=r"^(?:19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])([01]\d|2[0-3])([0-5]\d)$"
     ),
     payload: dict[str, Any] = Depends(get_current_user)
 ):
