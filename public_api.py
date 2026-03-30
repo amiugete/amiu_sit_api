@@ -371,7 +371,11 @@ def lista_elementi(
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
     id_piazzola: Optional[int] = Query(None, description="Filtra per ID piazzola"),
-    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD", pattern=r"^\d{8}$"),
+    last_update: Optional[str] = Query(
+        None,
+        description="Filtra per ultimo aggiornamento nel formato YYYYMMDDHHMM (es. 202603301230)",
+        pattern=r"^(?:19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])([01]\\d|2[0-3])([0-5]\\d)$"
+    ),
     payload: dict[str, Any] = Depends(get_current_user)
 ):
     logger.info("Ricevuta richiesta GET /elementi")

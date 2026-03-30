@@ -30,6 +30,7 @@ def prepared_statement_elementi() -> str:
         LEFT JOIN utenze.macro_categorie mc ON ep.id_macro_categoria = mc.id_macro_categoria
         WHERE e.id_piazzola IS NOT NULL
           AND (:id_piazzola IS NULL OR e.id_piazzola = :id_piazzola)
+          AND (:last_update IS NULL OR TO_CHAR(e.data_ultima_modifica,'YYYYMMDDHH24MI') = :last_update)
           AND te.tipologia_elemento NOT IN ('N')
         ORDER BY e.id_piazzola, tr.ordinamento, te.volume
         LIMIT COALESCE(:limit, 1000000)
@@ -71,7 +72,7 @@ def prepared_statement_elementi_with_count() -> str:
             WHERE e.id_piazzola IS NOT NULL
               AND (:id_piazzola IS NULL OR e.id_piazzola = :id_piazzola)
               AND te.tipologia_elemento NOT IN ('N')
-              and (:last_update is null or TO_CHAR(e.data_ultima_modifica,'YYYYMMDD') = :last_update) 
+              AND (:last_update IS NULL OR TO_CHAR(e.data_ultima_modifica,'YYYYMMDDHH24MI') = :last_update)
         )
         SELECT (SELECT COUNT(*) FROM queryElementi) AS total_count, *
         FROM queryElementi
