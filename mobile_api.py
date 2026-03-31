@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Query, HTTPException,Depends,Response,Body
 from business.permission import get_current_user
 from typing import Any, List, Optional
-from config.database import fetch_list_by_query
+from config.database import fetch_list_by_query,update_query
 from models.models import AstaMobile, ImmagineUploadFromSitMobile,PiazzolaMobile
 import logging
 from pathlib import Path
@@ -11,7 +11,7 @@ import os
 from dotenv import load_dotenv
 
 from repository.aste_repo_geoloc import prepared_statement_aste_mobile
-from repository.piazzole_repo import prepared_statement_piazzole, prepared_statement_piazzole_mobile, prepared_statement_piazzole_mobile_all_date, prepared_statement_piazzole_with_count
+from repository.piazzole_repo import prepared_statement_aste_mobile_update_foto, prepared_statement_piazzole, prepared_statement_piazzole_mobile, prepared_statement_piazzole_mobile_all_date, prepared_statement_piazzole_with_count
 
 load_dotenv()
 
@@ -41,7 +41,13 @@ def upload_foto_piazzola(
     
     file_path.write_bytes(file_bytes)
 
-    return Response(status_code=204)
+    query_update = prepared_statement_aste_mobile_update_foto()
+
+    params = {"id_piazzola": imageBody.id_piazzola, "foto": 1}
+
+    row = update_query(query_update, params)
+
+    return Response(status_code=204) if row is not None and row > 0 else Response(status_code=500, content="Errore durante l'aggiornamento del database.")
 
 
 

@@ -94,6 +94,19 @@ def fetch_one_by_query(sql: str, params=None) -> Optional[dict]:
      except Exception as e:
           logger.error(f"Errore SQL o di connessione: {str(e)}")
           return None
+############## Funzione di aggiornamento query engine.begin
+# ############ esegue il commit
+#  ########### automatico se si volesse lavorare in transazione
+############   allora usare il engine.connect() e pio eseguuire quando serve la commit() ########################              ########################
+def update_query(sql: str, params=None) -> Optional[int]:
+     """Esegue una query di aggiornamento sul database SIT."""
+     try:
+          with engine.begin() as connection:
+               stream = connection.execute(text(sql), params or {})
+               return stream.rowcount if stream else None
+     except Exception as e:
+          logger.error(f"Errore SQL o di connessione: {str(e)}")
+          return None
    
 #################### Funzione di esecuzione query  Mappe ########################
 def fetch_list_by_query_mappe(sql, params=None) -> Optional[List[dict]]:

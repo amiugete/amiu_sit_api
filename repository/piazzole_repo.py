@@ -189,3 +189,14 @@ left join topo.municipi m on m.id_municipio = q.id_municipio
         and (to_char(p.data_ultima_modifica,'YYYYMMDDHH24MI') > :last_update OR to_char(p.data_eliminazione,'YYYYMMDDHH24MI') > :data_eliminazione)
     """
 
+
+
+def prepared_statement_aste_mobile_update_foto() -> str:
+    """
+    Query per l'aggiornamento della foto di una piazzola.
+    """
+    return """
+        UPDATE elem.piazzole
+        SET foto = :foto, data_ultima_modifica = now()::timestamp(3)
+        WHERE id_piazzola = :id_piazzola
+    """
