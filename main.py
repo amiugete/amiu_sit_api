@@ -37,7 +37,8 @@ stream_handler.setFormatter(log_formatter)
 
 logging.basicConfig(
     level=logging.INFO,
-    handlers=[log_handler, stream_handler]
+    handlers=[log_handler, stream_handler],
+    force=True
 )
 logging.getLogger("watchfiles.main").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
