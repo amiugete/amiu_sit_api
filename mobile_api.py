@@ -100,7 +100,7 @@ def lista_aste(
         return []
 
     listAste = [AstaMobile(**row) for row in listAste]
-    logger.info(f"Restituiti {len(listAste)} aste.") 
+    logger.info(f"Restituiti {len(listAste)} aste.")
     
     return listAste
 
