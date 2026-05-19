@@ -1,4 +1,53 @@
+
+# Repository per le utenze, con query SQL predefinite per il recupero dei dati.
+
 def prepared_statement_utenze_UD_with_count() -> str:
+    """Query unificata per il recupero delle utenze per UD."""
+    return """
+            SELECT id_utente, 
+            progr_utenza as progressivo,
+            cod_via, 
+            cod_civico, 
+            cod_interno,
+            nominativo, 
+            superficie,
+            num_occupanti, abitazione_di_residenza, 
+            categoria, 
+            utilizzo,
+            COUNT(*) OVER() AS totale_record
+                        FROM etl.utenze_tia_domestiche
+                        ORDER BY id_utente
+            LIMIT :limit
+            OFFSET :offset
+                    """
+def prepared_statement_utenze_UND_with_count() -> str:
+    """Query unificata per il recupero delle utenze per UND."""
+    return """
+            SELECT id_utente, 
+            progr_utenza as progressivo,
+            nominativo, 
+            cod_via,
+            cod_civico, 
+            cod_interno,
+            superficie,
+            num_occupanti, abitazione_di_residenza, 
+            categoria, 
+            utilizzo,
+            COUNT(*) OVER() AS totale_record
+                        FROM etl.utenze_tia_non_domestiche
+                        ORDER BY id_utente
+            LIMIT :limit
+            OFFSET :offset
+                    """
+
+
+
+
+
+
+# Repository per le utenze Id&A (query analoghe alle precedenti ma su tabelle ristrette dedicate a Id&A, senza total count)
+
+def prepared_statement_utenze_UD_idea_with_count() -> str:
     """Query unificata per il recupero delle utenze per UD."""
     return """
             SELECT *, COUNT(*) OVER() AS totale_record
@@ -7,7 +56,7 @@ def prepared_statement_utenze_UD_with_count() -> str:
             LIMIT :limit
             OFFSET :offset
            """
-def prepared_statement_utenze_UND_with_count() -> str:
+def prepared_statement_utenze_UND_idea_with_count() -> str:
     """Query unificata per il recupero delle utenze per UND."""
     return """
             SELECT *, COUNT(*) OVER() AS totale_record
@@ -19,6 +68,11 @@ def prepared_statement_utenze_UND_with_count() -> str:
 
 
 
+
+
+################
+
+# utenze per civico (query più complesse, con raggruppamenti e total count separato)
 
 def prepared_statement_utenze_domestiche_per_civico() -> str:
     """Query per il recupero delle utenze domestiche per civico (paginata, senza total count)."""

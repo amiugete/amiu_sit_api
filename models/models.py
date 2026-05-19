@@ -136,26 +136,7 @@ class Mappa(BaseModel):
     titolo: str
     descrizione: str
 
-class Utenza(BaseModel):
-    id_utenza: str
-    codice_immobile: Optional[int] = None
-    cod_interno: Optional[str] = None
-    cod_civico: Optional[str] = None
-    tipo_utenza: Optional[str] = None
-    categoria: Optional[int] = None
-    nominativo: Optional[str] = None
-    cfisc_pariva: Optional[str] = None
-    cod_via: Optional[int] = None
-    descr_via: Optional[str] = None
-    civico: Optional[int] = None
-    lettera_civico: Optional[str] = None
-    colore_civico: Optional[str] = None
-    scala: Optional[str] = None
-    interno: Optional[str] = None
-    lettera_interno: Optional[str] = None
-    zona_municipio: Optional[str] = None
-    subzona_quartiere: Optional[str] = None
-    data_cessazione: Optional[datetime] = None
+
 
 
 class Bilaterali_albero(BaseModel):
@@ -317,6 +298,45 @@ class PercorsoDettaglio(BaseModel):
     tipo_elem: Optional[str]
     num: Optional[int]
 
+
+class Utenza(BaseModel):
+    id_utente: int
+    progressivo: Optional[int] = None
+    cod_via: Optional[int] = None
+    cod_civico: Optional[str] = None
+    cod_interno: Optional[str] = None
+    nominativo: Optional[str] = None
+    superficie: Optional[int] = None
+    num_occupanti: Optional[int] = None
+    abitazione_di_residenza: Optional[str] = None
+    categoria: Optional[int] = None
+    utilizzo: Optional[int] = None
+    
+    
+    
+class UtenzaIdea(BaseModel):
+    id_utenza: str
+    codice_immobile: Optional[int] = None
+    cod_interno: Optional[str] = None
+    cod_civico: Optional[str] = None
+    tipo_utenza: Optional[str] = None
+    categoria: Optional[int] = None
+    nominativo: Optional[str] = None
+    cfisc_pariva: Optional[str] = None
+    cod_via: Optional[int] = None
+    descr_via: Optional[str] = None
+    civico: Optional[int] = None
+    lettera_civico: Optional[str] = None
+    colore_civico: Optional[str] = None
+    scala: Optional[str] = None
+    interno: Optional[str] = None
+    lettera_interno: Optional[str] = None
+    zona_municipio: Optional[str] = None
+    subzona_quartiere: Optional[str] = None
+    data_cessazione: Optional[datetime] = None
+
+
+# classi perUtenze
 class UtenzeDomestichePerCivico(BaseModel):
     cod_civico: Optional[str] = None
     cod_via: Optional[int] = None
@@ -333,6 +353,13 @@ class UtenzeNonDomestichePerCivico(BaseModel):
     utilizzo: Optional[int] = None
     descr_utilizzo: Optional[str] = None
     num_utenze: Optional[int] = None
+    
+    
+
+
+
+
+
 
 class GeoJSNONModel(BaseModel):
     type: str = 'FeatureCollection'
@@ -406,10 +433,16 @@ class SecurityLogUser(BaseModel):
     count_access: Optional[int] = None
 
 
+
+
+
 class UserRoles(BaseModel):
     id_user: int
     utenze: Optional[bool] = None
+    idea: Optional[bool] = None
+    #### da verificare. Dove lo prende???
     amministratore: Optional[bool] = None
+
 
     def get_active_roles(self) -> list[str]:
         """Restituisce una lista dei ruoli attivi per l'utente."""

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 bearer_scheme = HTTPBearer()
 
-def verifica_permesso_utenze(payload: dict[str, any]) -> tuple[bool, str]:
+def verifica_permesso_utenze(payload: dict[str, any], indirizzo_ws) -> tuple[bool, str]:
     """
     Verifica se l'utente ha i permessi necessari per accedere a un endpoint specifico.
     Prende in input il payload dell'utente (ottenuto dal token JWT) e restituisce una tupla (is_authorized: bool, message: str) dove is_authorized indica se l'utente è autorizzato e message fornisce dettagli in caso di mancata autorizzazione.
@@ -20,7 +20,7 @@ def verifica_permesso_utenze(payload: dict[str, any]) -> tuple[bool, str]:
     Restituisce una tupla (is_authorized: bool, message: str) dove is_authorized indica se l'utente è autorizzato e message fornisce dettagli in caso di mancata autorizzazione.
     """
     # Recupera i ruoli dell'utente dal database considerando la nattura deterministica dei ruoli presenti in base dati es (utenze = True/False)
-    UTENZE_ENDPOINT = "/utenze_tari"
+    #UTENZE_ENDPOINT = "/utenze_tari"
     permessi :List[str] = []
     active_roles_user :List[str] = []
 
@@ -28,14 +28,29 @@ def verifica_permesso_utenze(payload: dict[str, any]) -> tuple[bool, str]:
     # di stringhe con il metodo di classe get_active_roles() che restituisce un array di stringhe 
     # con i ruoli attivi per l'utente in base al valore boleano passato, 
     # se False non aggiunge nulla all'array dei ruoli attivi. Se l'utente non ha ruoli assegnati restituisco False e un messaggio di errore.
-    if payload.get("user_id") and payload.get("utenze") is not None:
-        user_roles = UserRoles(id_user=payload.get("user_id"), utenze=payload.get("utenze"))
+    if payload.get("user_id") is not None :
+        
+    
+    ### ATTENZIONE: se l'utente ha più ruoli assegnati (es. utenze = True e idea = True)
+    # bisognerebbe renderlo dinamico 
+    
+    
+    # if payload.get("user_id") and payload.get("utenze") is not None:
+        user_roles = UserRoles(id_user=payload.get("user_id"), 
+                               utenze=payload.get("utenze"), 
+                               idea=payload.get("idea"))
         active_roles_user = user_roles.get_active_roles()
+        
     else:
         return False, "Utente senza ruoli assegnati"
     
+    logger.info(f'user_roles: {user_roles}')
+    logger.info(f"active_roles_user: {active_roles_user}")
+    
+    
+    
     return verifica_permesso_endpoint_utente( id_user=payload.get("user_id"),
-                                              endpoint=UTENZE_ENDPOINT,
+                                              endpoint=indirizzo_ws,
                                               active_permiss_user=active_roles_user)
 
 
@@ -61,6 +76,9 @@ def verifica_permesso_endpoint_utente(id_user: int, endpoint: str, active_permis
     query_perms = get_lista_permessi_endpoint()
     perms_result = fetch_list_by_query(query_perms, {"endpoint": endpoint})
     
+    logger.info(f"Permessi richiesti per l'endpoint {endpoint}: {[row['permesso'] for row in perms_result]}")
+    
+    logger.info(f'active_permiss_user: {active_permiss_user}')
     if perms_result:
        permessi = [row['permesso'] for row in perms_result]
        if permessi is None or len(permessi) == 0:

@@ -161,7 +161,11 @@ async def login(request: Request,
     user_roles_query = get_user_roles()
     utente_role = fetch_one_by_query(user_roles_query, {"id_user": user.id_user})
     utente_role = UserRoles(**utente_role) if utente_role else None
-    utenze_param = {"utenze": utente_role.utenze if utente_role is not None and utente_role.utenze else False}
+    logger.info(f"Ruolo utenze per l'utente ID {user.id_user}: {utente_role.utenze if utente_role else 'Nessun ruolo utenze'}")
+    
+    utenze_param = {"utenze": utente_role.utenze if utente_role is not None and utente_role.utenze else False,
+                    "idea": utente_role.idea if utente_role is not None and utente_role.idea else False}
+    logger.info(f"utenze_param per l'utente ID {user.id_user}: {utenze_param}")
     ################################################################################################################
     try:
         access_token = create_access_token(data={"sub": username, "user_id": user.id_user, "email": user.email, "role": user.role_name,**utenze_param})

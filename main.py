@@ -7,8 +7,9 @@ import logging
 from public_api import router as public_router
 from mobile_api import router as mobile_router
 from duale_api import router as duale_router
-from idea_api import router as idea_router
-from bilaterale import router as bilaterale_router
+from utenze_api import router as utenze_router
+from utenze_api_idea import router as utenze_idea_router
+from bilaterale_api import router as bilaterale_router
 from auth_api import router as auth_router
 from tellus_api import router as tellus_router
 from localizzazione_api import router as localizzazione_router
@@ -72,7 +73,8 @@ app.include_router(prefix="/auth", tags=["Servizi di autenticazione"], router=au
 app.include_router(prefix="", router=public_router)
 app.include_router(prefix="/mobile", router=mobile_router)
 app.include_router(prefix="/duale", router=duale_router)
-app.include_router(prefix="/utenze", router=idea_router)
+app.include_router(prefix="/utenze", router=utenze_router)
+app.include_router(prefix="/idea", router=utenze_idea_router)
 app.include_router(prefix="/bilaterale", router=bilaterale_router)
 app.include_router(prefix="/posteriori", router=tellus_router)
 app.include_router(prefix="/locate", router=localizzazione_router)

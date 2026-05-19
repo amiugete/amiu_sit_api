@@ -4,15 +4,14 @@ from business.permission import get_current_user, verifica_permesso_utenze
 from business.utility import get_total_count_from_rows
 from config.database import fetch_list_by_query
 
-from models.models import UtenzeDomestichePerCivico, UtenzeNonDomestichePerCivico,FasceEtaCivico, PaginatedResponse,MacroCategoria, PaginatedResponse, Utenza,Utenza
+from models.models import UtenzeDomestichePerCivico, UtenzeNonDomestichePerCivico,FasceEtaCivico, PaginatedResponse, MacroCategoria, Utenza
 import logging
 from enum import Enum
 
 # i prepared statement per le query al database sono definiti nei repository corrispondenti 
 # alla tipologia di dato restituito (es. repository/vie_repo.py per le vie, repository/piazzole_repo.py per le piazzole, ecc.).
 from repository.civici_anagrafe_fasce_eta import prepared_statement_fasce_eta, prepared_statement_fasce_eta_with_count
-from repository.bilaterali_repo import prepared_statement_bilaterali_albero,prepared_statement_bilaterali, prepared_statement_percorso_dettaglio
-from repository.utenze_repo import prepared_statement_utenze_UD_with_count,prepared_statement_utenze_UND_with_count,prepared_statement_utenze_domestiche_per_civico, prepared_statement_utenze_domestiche_per_civico_total_count,prepared_statement_utenze_non_domestiche_per_civico, prepared_statement_utenze_non_domestiche_per_civico_total_count, prepared_statement_utenze_non_domestiche_per_civico_total_count
+from repository.utenze_repo import prepared_statement_utenze_UD_with_count, prepared_statement_utenze_UND_with_count, prepared_statement_utenze_domestiche_per_civico, prepared_statement_utenze_domestiche_per_civico_total_count, prepared_statement_utenze_non_domestiche_per_civico, prepared_statement_utenze_non_domestiche_per_civico_total_count
 from repository.macro_categorie_repo import prepared_statement_macro_categorie
 
 from config.database import fetch_list_by_query, fetch_list_by_query_strade,fetch_count_by_query_strade
@@ -50,6 +49,12 @@ def macro_categorie(
     return listaMacroCategorie
 
 
+
+
+
+
+
+
 @router.get("/utenze_tari", response_model= PaginatedResponse[Utenza],
                         description="""Recupera la lista delle utenze tari con filtri opzionali .
                             Paginazione opzionale gestita tramite parametri page e size nella request.
@@ -59,12 +64,12 @@ def lista_utenze(
     tipo: TipoUtenza = Query(..., description="Filtra per tipo di utenza (UD = Domestica o UND = Non Domestica)"),
     payload: dict[str, Any] = Depends(get_current_user),
     page: int = Query(..., ge=1, description="Numero della pagina"),
-    size: int = Query(..., ge=1, le=100, description="Dimensione della pagina")
+    size: int = Query(..., ge=1, le=1000, description="Dimensione della pagina")
 ):
     """Endpoint per recuperare la lista delle utenze con autenticazione."""
     
     # Verifica dei permessi dell'utente per accedere a questo endpoint prendendo le informazioni dal payload ottenuto con get_current_user
-    is_auth,msg = verifica_permesso_utenze(payload)
+    is_auth,msg = verifica_permesso_utenze(payload, "/utenze_tari")
 
     if not is_auth:
         logger.warning(f"Accesso non autorizzato all'endpoint /utenze_tari per l'utente ID {payload.get('user_id')}: {msg}")
@@ -92,7 +97,6 @@ def lista_utenze(
             query_select = prepared_statement_utenze_UND_with_count()
 
         lista_dict_utenze = fetch_list_by_query(query_select, {"limit": limit, "offset": offset})
-
         if lista_dict_utenze is None or len(lista_dict_utenze) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
             result.content = []
@@ -106,6 +110,7 @@ def lista_utenze(
         total = get_total_count_from_rows(lista_dict_utenze)
 
         list_utenze = [Utenza(**row) for row in lista_dict_utenze]
+
 
         result.total = total
         result.content = list_utenze
@@ -133,7 +138,7 @@ def lista_utenze_civici(
     id_via: Optional[int] = Query(None, description="Filtra per via"),
     cod_civico: Optional[int] = Query(None, description="Filtra per civico"),
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
-    size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina")
+    size: Optional[int] = Query(None, ge=1, le=1000, description="Dimensione della pagina")
 ):
     """Endpoint per recuperare la lista delle utenze con autenticazione."""
     logger.info("Ricevuta richiesta GET /civici/utenze_tari")
@@ -197,7 +202,7 @@ def lista_utenze_civici(
 @router.get("/civici/anagrafe/fasce_eta", response_model=Union[PaginatedResponse[FasceEtaCivico ], List[FasceEtaCivico]]  , description="Recupera la lista dei civici ragruppandoli per le fasce di età con filtri opzionali. Paginazione opzionale gestita tramite parametri page e size nella request. Richiede autenticazione (Bearer Token).")
 def lista_civici_fasce_eta(
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
-    size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
+    size: Optional[int] = Query(None, ge=1, le=1000, description="Dimensione della pagina"),
     id_via: Optional[int] = Query(None, description="Filtra per via"),
     cod_civico: Optional[int] = Query(None, description="Filtra per civico"),
     payload: dict[str, Any] = Depends(get_current_user)
