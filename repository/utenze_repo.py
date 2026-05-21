@@ -14,7 +14,7 @@ def prepared_statement_utenze_UD_with_count() -> str:
             num_occupanti, abitazione_di_residenza, 
             categoria, 
             utilizzo,
-            COUNT(*) OVER() AS totale_record
+            COUNT(*) OVER() AS total_count
                         FROM etl.utenze_tia_domestiche
                         ORDER BY id_utente
             LIMIT :limit
@@ -33,16 +33,12 @@ def prepared_statement_utenze_UND_with_count() -> str:
             num_occupanti, abitazione_di_residenza, 
             categoria, 
             utilizzo,
-            COUNT(*) OVER() AS totale_record
+            COUNT(*) OVER() AS total_count
                         FROM etl.utenze_tia_non_domestiche
-                        ORDER BY id_utente
+            ORDER BY id_utente
             LIMIT :limit
             OFFSET :offset
                     """
-
-
-
-
 
 
 # Repository per le utenze Id&A (query analoghe alle precedenti ma su tabelle ristrette dedicate a Id&A, senza total count)
@@ -50,7 +46,7 @@ def prepared_statement_utenze_UND_with_count() -> str:
 def prepared_statement_utenze_UD_idea_with_count() -> str:
     """Query unificata per il recupero delle utenze per UD."""
     return """
-            SELECT *, COUNT(*) OVER() AS totale_record
+            SELECT *, COUNT(*) OVER() AS total_count
             FROM etl.utenze_tia_domestiche_idea
             ORDER BY id_utenza
             LIMIT :limit
@@ -59,7 +55,7 @@ def prepared_statement_utenze_UD_idea_with_count() -> str:
 def prepared_statement_utenze_UND_idea_with_count() -> str:
     """Query unificata per il recupero delle utenze per UND."""
     return """
-            SELECT *, COUNT(*) OVER() AS totale_record
+            SELECT *, COUNT(*) OVER() AS total_count
             FROM etl.utenze_tia_non_domestiche_idea
             ORDER BY id_utenza
             LIMIT :limit
