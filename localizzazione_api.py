@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, HTTPException,Depends
 from business.permission import get_current_user
 from typing import Any, List
-from config.database import fetch_list_by_query
+from config.database import fetch_list_by_engine, DbConnection
 from models.models import Point2Area
 from repository.localizzazione_repo import prepared_statement_point2area
 import logging
@@ -28,7 +28,7 @@ def get_area_from_point(
     query = prepared_statement_point2area()
     params = {"lat": lat, "lon": lon}
     
-    area_rows: List[dict] | None = fetch_list_by_query(query, params)
+    area_rows: List[dict] | None = fetch_list_by_engine(query, DbConnection.SIT, params)
 
     if area_rows is None or len(area_rows) == 0:
         logger.warning(f"Nessun risultato per le coordinate lat={lat}, lon={lon}.")

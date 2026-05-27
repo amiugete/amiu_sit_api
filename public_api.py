@@ -7,7 +7,7 @@ import logging
 
 # database
 from business.utility import get_total_count_from_rows
-from config.database import fetch_list_by_query
+from config.database import fetch_list_by_engine, DbConnection
 
 # modelli
 from models.models import   GeoJSNONModel, Municipio, MyFutureModel, Piazzola, PaginatedResponse, PaginatedGeoJSONResponse, Via, Comune, Civico, Quartiere, Ambito, PointOfInterest, Elemento
@@ -49,7 +49,7 @@ def lista_ambiti(
 ):
     logger.info("Ricevuta richiesta GET /ambiti")
     query_select = prepared_statement_ambiti()
-    listAmbiti = fetch_list_by_query(query_select, {})
+    listAmbiti = fetch_list_by_engine(query_select, DbConnection.SIT, {})
     if listAmbiti is None or len(listAmbiti) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
         return []
@@ -73,7 +73,7 @@ def lista_comuni(
         "cod_istat": cod_istat
     }
     query_select = prepared_statement_comuni()
-    listComuni = fetch_list_by_query(query_select, params)
+    listComuni = fetch_list_by_engine(query_select, DbConnection.SIT, params)
     if listComuni is None or len(listComuni) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
         return []
@@ -91,7 +91,7 @@ def lista_municipi(
 ):
     logger.info("Ricevuta richiesta GET /municipi")
     query_select = prepared_statement_municipi_genova()
-    municipi_row = fetch_list_by_query(query_select, {})
+    municipi_row = fetch_list_by_engine(query_select, DbConnection.SIT, {})
     if municipi_row is None or len(municipi_row) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
         return []
@@ -111,7 +111,7 @@ def lista_quartieri(
     logger.info("Ricevuta richiesta GET /quartieri")
     params = {"id_municipio": id_municipio}
     query_select = prepared_statement_quartieri()
-    listQuartieri = fetch_list_by_query(query_select, params)
+    listQuartieri = fetch_list_by_engine(query_select, DbConnection.SIT, params)
     if listQuartieri is None or len(listQuartieri) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
         return []
@@ -146,7 +146,7 @@ def lista_vie(
 
     if limit is not None and offset is not None:
         query_select = prepared_statement_vie_with_count()
-        listVie = fetch_list_by_query(query_select, {**params, "limit": limit, "offset": offset})
+        listVie = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
 
         if listVie is None or len(listVie) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
@@ -162,7 +162,7 @@ def lista_vie(
         logger.info(f"Restituite {result.total} vie.")
     else:
         query_select = prepared_statement_vie()
-        listVie = fetch_list_by_query(query_select, {**params, "limit": limit, "offset": offset})
+        listVie = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
 
         if listVie is None or len(listVie) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
@@ -205,7 +205,7 @@ def lista_aste(
 
     params = {"limit": limit, "offset": offset, "last_update": last_update, "id_via": id_via, "id_municipio": id_municipio}
     query_aste = prepared_statement_aste_geoloc()
-    listAste = fetch_list_by_query(query_aste, params)
+    listAste = fetch_list_by_engine(query_aste, DbConnection.SIT, params)
     total = 0
     if listAste is None or len(listAste) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
@@ -272,7 +272,7 @@ def lista_civici(
     
     if limit is not None and offset is not None:
         query_select = prepared_statement_civici_with_count()
-        listCivici = fetch_list_by_query(query_select, {**params, "limit": limit, "offset": offset})
+        listCivici = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
 
         if listCivici is None or len(listCivici) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
@@ -289,7 +289,7 @@ def lista_civici(
         logger.info(f"Restituiti {result.total} civici.")
     else:
         query_select = prepared_statement_civici()
-        listCivici = fetch_list_by_query(query_select, {**params, "limit": limit, "offset": offset})
+        listCivici = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
 
         if listCivici is None or len(listCivici) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
@@ -331,7 +331,7 @@ def lista_piazzole(
     # Query per il ritorno del risultato paginato
     if limit is not None and offset is not None:
         query_select = prepared_statement_piazzole_with_count()
-        listPiazzole = fetch_list_by_query(query_select, {**params, "limit": limit, "offset": offset})
+        listPiazzole = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
 
         if listPiazzole is None or len(listPiazzole) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
@@ -350,7 +350,7 @@ def lista_piazzole(
     # Query per il ritorno del risultato non paginato
     else:
         query_select = prepared_statement_piazzole()
-        listPiazzole = fetch_list_by_query(query_select, {**params, "limit": limit, "offset": offset})
+        listPiazzole = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
 
         if listPiazzole is None or len(listPiazzole) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
@@ -393,7 +393,7 @@ def lista_elementi(
     # Query per il ritorno del risultato paginato
     if limit is not None and offset is not None:
         query_select = prepared_statement_elementi_with_count()
-        listElementi = fetch_list_by_query(query_select, {**params, "limit": limit, "offset": offset})
+        listElementi = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
 
         if listElementi is None or len(listElementi) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
@@ -412,7 +412,7 @@ def lista_elementi(
     # Query per il ritorno del risultato non paginato
     else:
         query_select = prepared_statement_elementi()
-        listElementi = fetch_list_by_query(query_select, {**params, "limit": limit, "offset": offset})
+        listElementi = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
 
         if listElementi is None or len(listElementi) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
@@ -432,7 +432,7 @@ def lista_point_of_interest(
 ):
     logger.info("Ricevuta richiesta GET /point of interest")
     query_select = prepared_statement_pointofinterest()
-    listPointOfInterest = fetch_list_by_query(query_select, {})
+    listPointOfInterest = fetch_list_by_engine(query_select, DbConnection.SIT, {})
     if listPointOfInterest is None or len(listPointOfInterest) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
         return []

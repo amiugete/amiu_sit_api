@@ -2,7 +2,7 @@ from typing import List
 import logging
 from fastapi import Depends,HTTPException,status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from config.database import fetch_list_by_query,fetch_one_by_query
+from config.database import fetch_list_by_engine, fetch_one_by_engine, DbConnection
 from config.jwt_token_config import check_jwt_token
 from models.models import UserRoles
 from repository.users_repo import get_lista_permessi_endpoint, get_user_roles
@@ -74,7 +74,7 @@ def verifica_permesso_endpoint_utente(id_user: int, endpoint: str, active_permis
         return False, "utente non presente nel payload"
 
     query_perms = get_lista_permessi_endpoint()
-    perms_result = fetch_list_by_query(query_perms, {"endpoint": endpoint})
+    perms_result = fetch_list_by_engine(query_perms, DbConnection.SIT, {"endpoint": endpoint})
     
     logger.info(f"Permessi richiesti per l'endpoint {endpoint}: {[row['permesso'] for row in perms_result]}")
     

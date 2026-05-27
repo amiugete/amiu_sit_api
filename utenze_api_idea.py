@@ -6,8 +6,7 @@ from fastapi import APIRouter, Query, Depends, HTTPException, status
 from typing import Any, List, Optional, Union
 from business.permission import get_current_user, verifica_permesso_utenze
 from business.utility import get_total_count_from_rows
-from config.database import fetch_list_by_query
-
+from config.database import fetch_list_by_engine, DbConnection
 from models.models import UtenzaIdea, PaginatedResponse
 import logging
 from enum import Enum
@@ -15,8 +14,6 @@ from enum import Enum
 # i prepared statement per le query al database sono definiti nei repository corrispondenti 
 # alla tipologia di dato restituito (es. repository/vie_repo.py per le vie, repository/piazzole_repo.py per le piazzole, ecc.).
 from repository.utenze_repo import prepared_statement_utenze_UD_idea_with_count,prepared_statement_utenze_UND_idea_with_count
-
-from config.database import fetch_list_by_query
 
 
 # In questo router sono definite delle api che restituiscono dati geografici di vario tipo (comuni, vie, piazzole, civici, quartieri, ambiti, municipi, point of interest) con filtri opzionali e paginazione. Tutti questi endpoint richiedono autenticazione tramite Bearer Token e verificano i permessi dell'utente prima di restituire i dati.
@@ -82,7 +79,7 @@ def lista_utenze(
         else:
             query_select = prepared_statement_utenze_UND_idea_with_count()
 
-        lista_dict_utenze = fetch_list_by_query(query_select, {"limit": limit, "offset": offset})
+        lista_dict_utenze = fetch_list_by_engine(query_select, DbConnection.SIT, {"limit": limit, "offset": offset})
 
         if lista_dict_utenze is None or len(lista_dict_utenze) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")

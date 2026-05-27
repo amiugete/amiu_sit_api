@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Query, Depends, HTTPException
 from typing import Any, List
 from business.permission import get_current_user
-from config.database import fetch_list_by_query
 import logging
 from enum import Enum
 
 # database
-from config.database import fetch_list_by_query,fetch_list_by_query_mappe
+from config.database import fetch_list_by_engine, DbConnection
 
 # models
 from models.models import  LayerFilterResponse, Mappa
@@ -32,7 +31,7 @@ def mappe(
 ):
     logger.info("Ricevuta richiesta GET /mappe")
     query_select = prepared_statement_mappe()
-    listaMappe = fetch_list_by_query_mappe(query_select, {})
+    listaMappe = fetch_list_by_engine(query_select, DbConnection.MAPPE, {})
     if listaMappe is None or len(listaMappe) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
         return []
@@ -70,7 +69,7 @@ def get_layer_filter(
     # In linea con il codice PHP, non aggiungo wildcard. L'utente deve fornirli se necessario.
     params = {"title": t, "name": n}
 
-    layer_rows = fetch_list_by_query(query, params)
+    layer_rows = fetch_list_by_engine(query, DbConnection.SIT, params)
     
     if layer_rows is None or len(layer_rows) == 0:
         logger.info(f"Nessun risultato ottenuto dalla query per /layer_filter con parametri t={t}, l={l.value}, n={n}")

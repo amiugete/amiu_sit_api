@@ -2,7 +2,6 @@ from fastapi import APIRouter, Query, Depends, HTTPException, status
 from typing import Any, List, Optional, Union
 from business.permission import get_current_user, verifica_permesso_utenze
 from business.utility import get_total_count_from_rows
-from config.database import fetch_list_by_query
 
 from models.models import UtenzeDomestichePerCivico, UtenzeNonDomestichePerCivico,FasceEtaCivico, PaginatedResponse, MacroCategoria, Utenza
 import logging
@@ -14,7 +13,7 @@ from repository.civici_anagrafe_fasce_eta import prepared_statement_fasce_eta, p
 from repository.utenze_repo import prepared_statement_utenze_UD_with_count, prepared_statement_utenze_UND_with_count, prepared_statement_utenze_domestiche_per_civico, prepared_statement_utenze_domestiche_per_civico_total_count, prepared_statement_utenze_non_domestiche_per_civico, prepared_statement_utenze_non_domestiche_per_civico_total_count
 from repository.macro_categorie_repo import prepared_statement_macro_categorie
 
-from config.database import fetch_list_by_query, fetch_list_by_query_strade,fetch_count_by_query_strade
+from config.database import fetch_list_by_engine, fetch_count_by_engine, DbConnection
 
 
 # In questo router sono definite delle api che restituiscono dati geografici di vario tipo (comuni, vie, piazzole, civici, quartieri, ambiti, municipi, point of interest) con filtri opzionali e paginazione. Tutti questi endpoint richiedono autenticazione tramite Bearer Token e verificano i permessi dell'utente prima di restituire i dati.
@@ -40,7 +39,7 @@ def macro_categorie(
 ):
     logger.info("Ricevuta richiesta GET /macro_categorie")
     query_select = prepared_statement_macro_categorie()
-    listaMacroCategorie = fetch_list_by_query_strade(query_select, {})
+    listaMacroCategorie = fetch_list_by_engine(query_select, DbConnection.STRADE, {})
     if listaMacroCategorie is None or len(listaMacroCategorie) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
         return []
@@ -96,7 +95,7 @@ def lista_utenze(
         else:
             query_select = prepared_statement_utenze_UND_with_count()
 
-        lista_dict_utenze = fetch_list_by_query(query_select, {"limit": limit, "offset": offset})
+        lista_dict_utenze = fetch_list_by_engine(query_select, DbConnection.SIT, {"limit": limit, "offset": offset})
         if lista_dict_utenze is None or len(lista_dict_utenze) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
             result.content = []
@@ -157,18 +156,18 @@ def lista_utenze_civici(
         query_select = prepared_statement_utenze_domestiche_per_civico()
         if limit is not None and offset is not None:
             totale_pagination_query = prepared_statement_utenze_domestiche_per_civico_total_count()
-            total_count = fetch_count_by_query_strade(totale_pagination_query, {"id_via": id_via, "cod_civico": cod_civico})
+            total_count = fetch_count_by_engine(totale_pagination_query, DbConnection.STRADE, {"id_via": id_via, "cod_civico": cod_civico})
             if total_count is not None:
                 result.total = total_count
     else:
         query_select = prepared_statement_utenze_non_domestiche_per_civico()
         if limit is not None and offset is not None:
             totale_pagination_query = prepared_statement_utenze_non_domestiche_per_civico_total_count()
-            total_count = fetch_count_by_query_strade(totale_pagination_query, {"id_via": id_via, "cod_civico": cod_civico})
+            total_count = fetch_count_by_engine(totale_pagination_query, DbConnection.STRADE, {"id_via": id_via, "cod_civico": cod_civico})
             if total_count is not None:
                 result.total = total_count
 
-    lista_dict_utenze = fetch_list_by_query_strade(query_select, {"limit": limit,
+    lista_dict_utenze = fetch_list_by_engine(query_select, DbConnection.STRADE, {"limit": limit,
                                                                   "offset": offset, 
                                                                   "id_via": id_via,
                                                                   "cod_civico": cod_civico})
@@ -221,7 +220,7 @@ def lista_civici_fasce_eta(
     
     if limit is not None and offset is not None:
         query_select = prepared_statement_fasce_eta_with_count()
-        listCivici = fetch_list_by_query_strade(query_select, {**params, "limit": limit, "offset": offset})
+        listCivici = fetch_list_by_engine(query_select, DbConnection.STRADE, {**params, "limit": limit, "offset": offset})
 
         if listCivici is None or len(listCivici) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
@@ -241,7 +240,7 @@ def lista_civici_fasce_eta(
         logger.info(f"Restituiti {result.total} record.")
     else:
         query_select = prepared_statement_fasce_eta()
-        listCivici = fetch_list_by_query_strade(query_select, {**params})
+        listCivici = fetch_list_by_engine(query_select, DbConnection.STRADE, {**params})
 
         if listCivici is None or len(listCivici) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")

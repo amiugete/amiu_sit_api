@@ -2,7 +2,7 @@ from fastapi import APIRouter, Form, HTTPException, status,Request #, Query, Dep
 from pydantic import SecretStr
 
 from business.email.email_engine import send_email_territorio
-from config.database import fetch_one_by_query,init_security_log_db,get_security_connection, init_security_log_user_db
+from config.database import fetch_one_by_engine, DbConnection, init_security_log_db, get_security_connection, init_security_log_user_db
 from models.models import SecurityLogUser, User,UserRoles,SecurityLog,Block
 from repository.users_repo import check_user_db, get_user_roles
 from repository.security_repo import get_security_log_by_user, insert_security_log_user, reset_attempts_and_ban_count_user, update_access_log, update_access_log_user, update_attempts0_block_24h_user, update_attempts0_block_30min,update_attempts0_block_24h, update_attempts0_block_30min_user, update_attempts0_block_30min_user, update_attempts0_block_permanent, get_security_log_by_ip,insert_security_log, update_attempts0_block_permanent_user,update_attempts_only,reset_attempts_and_ban_count, update_attempts_only_user
@@ -138,7 +138,7 @@ async def login(request: Request,
     user_query = check_user_db(username)
 
     try:
-        user_record = fetch_one_by_query(user_query, {"name": username})
+        user_record = fetch_one_by_engine(user_query, DbConnection.SIT, {"name": username})
         if not user_record:
             logger.warning(f"Utente {username} non trovato nel database.")
             raise HTTPException(
@@ -159,7 +159,7 @@ async def login(request: Request,
     # Una volta ottenuto l'utente verifico se ha il permesso per l'utenze e lo aggiungo al token come parametro per poterlo utilizzare nei servizi che richiedono questo permesso specifico####
     # Per eventuali futuri permessi, si potrebbe implementare una logica simile per aggiungere altri parametri al token in base ai permessi dell'utente, in modo da avere un token più ricco di informazioni sui privilegi dell'utente.
     user_roles_query = get_user_roles()
-    utente_role = fetch_one_by_query(user_roles_query, {"id_user": user.id_user})
+    utente_role = fetch_one_by_engine(user_roles_query, DbConnection.SIT, {"id_user": user.id_user})
     utente_role = UserRoles(**utente_role) if utente_role else None
     logger.info(f"Ruolo utenze per l'utente ID {user.id_user}: {utente_role.utenze if utente_role else 'Nessun ruolo utenze'}")
     

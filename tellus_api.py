@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query,Depends
 from business.permission import get_current_user
 from typing import Any, List, Optional, Union
 from business.utility import get_total_count_from_rows
-from config.database import fetch_list_by_query
+from config.database import fetch_list_by_engine, DbConnection
 from models.models import  Deposito, ElementoAmiu,MezzoEkovision, ItinerarioPercorsoPsteriore, PaginatedResponse, PiazzolaAmiu, PosterioriPercorso
 from repository.depositi_repo import prepared_statement_depositi
 from repository.elementi_amiu_repo import prepared_statement_elementi_amiu
@@ -52,7 +52,7 @@ def lista_piazzole_amiu(
     params = {"last_update": last_update}
 
     query_select = prepared_statement_piazzole_amiu()
-    piazzole_row = fetch_list_by_query(query_select, {**params, "limit": limit, "offset": offset})
+    piazzole_row = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
 
     if piazzole_row is None or len(piazzole_row) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
@@ -102,7 +102,7 @@ def lista_elementi_p(
 
 
     query_select = prepared_statement_elementi_amiu()
-    elementi_row = fetch_list_by_query(query_select, {"last_update": last_update,"limit": limit, "offset": offset})
+    elementi_row = fetch_list_by_engine(query_select, DbConnection.SIT, {"last_update": last_update,"limit": limit, "offset": offset})
 
     if elementi_row is None or len(elementi_row) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
@@ -155,7 +155,7 @@ def lista_percorsi_p(
 
     params = {"last_update": last_update}
     query_select = prepared_statement_posteriori_with_count()
-    listPercorsi_row = fetch_list_by_query(query_select, {**params, "limit": limit, "offset": offset})
+    listPercorsi_row = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
 
     if listPercorsi_row is None or len(listPercorsi_row) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
@@ -203,7 +203,7 @@ def lista_itinerari_p(
 
 
     query_select = prepared_statement_percorsi_posteriori_aggiornata()
-    itinerari_row = fetch_list_by_query(query_select, {"last_update": last_update,"limit": limit, "offset": offset})
+    itinerari_row = fetch_list_by_engine(query_select, DbConnection.SIT, {"last_update": last_update,"limit": limit, "offset": offset})
 
     if itinerari_row is None or len(itinerari_row) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
@@ -247,7 +247,7 @@ def lista_mezzi_ekovision(
 
 
     query_select = prepared_statement_mezzi_ekovision()
-    mezzi_row = fetch_list_by_query(query_select, {"check_date": check_date,"limit": limit, "offset": offset})
+    mezzi_row = fetch_list_by_engine(query_select, DbConnection.SIT, {"check_date": check_date,"limit": limit, "offset": offset})
 
     if mezzi_row is None or len(mezzi_row) == 0:
             logger.info("Nessun risultato ottenuto dalla query.")
@@ -290,7 +290,7 @@ def lista_depositi(
         limit = size
 
     query_select = prepared_statement_depositi()
-    depositi_rows = fetch_list_by_query(query_select, {"last_update": last_update, "limit": limit, "offset": offset})
+    depositi_rows = fetch_list_by_engine(query_select, DbConnection.SIT, {"last_update": last_update, "limit": limit, "offset": offset})
 
     if depositi_rows is None or len(depositi_rows) == 0:
         logger.info("Nessun risultato ottenuto dalla query per /depositi.")

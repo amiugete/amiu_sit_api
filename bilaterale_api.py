@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, Depends
 from typing import Any, List, Optional
 from business.permission import get_current_user
-from config.database import fetch_list_by_query
+from config.database import fetch_list_by_engine, DbConnection
 from business.utility import get_total_count_from_rows
 import logging
 
@@ -9,7 +9,7 @@ import logging
 # alla tipologia di dato restituito (es. repository/vie_repo.py per le vie, repository/piazzole_repo.py per le piazzole, ecc.).
 from repository.bilaterali_repo import prepared_statement_bilaterali_albero,prepared_statement_bilaterali, prepared_statement_percorso_dettaglio
 
-from config.database import fetch_list_by_query
+from config.database import fetch_list_by_engine, DbConnection
 
 from models.models import PercorsoDettaglio,Bilaterali_albero,Bilaterali
 
@@ -39,7 +39,7 @@ def elenco_percorsi_bilaterali_tree(
     logger.info("Ricevuta richiesta GET /elenco_percorsi_bilaterali_tree")
 
     query_select = prepared_statement_bilaterali_albero()
-    list_bilaterali_albero = fetch_list_by_query(query_select, {})
+    list_bilaterali_albero = fetch_list_by_engine(query_select, DbConnection.SIT, {})
 
     if list_bilaterali_albero is None or len(list_bilaterali_albero) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
@@ -60,7 +60,7 @@ def elenco_percorsi_bilaterali(
     logger.info("Ricevuta richiesta GET /elenco_percorsi_bilaterali")
 
     query_select = prepared_statement_bilaterali()
-    list_bilaterali = fetch_list_by_query(query_select, {})
+    list_bilaterali = fetch_list_by_engine(query_select, DbConnection.SIT, {})
 
     if list_bilaterali is None or len(list_bilaterali) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
@@ -83,7 +83,7 @@ def dettagli_percorso(
     
     logger.info("Ricevuta richiesta GET /dettagli_percorso")
     query_select = prepared_statement_percorso_dettaglio()
-    dettaglio_list = fetch_list_by_query(query_select, {"id": id})
+    dettaglio_list = fetch_list_by_engine(query_select, DbConnection.SIT, {"id": id})
 
     if dettaglio_list is None or len(dettaglio_list) == 0:
         logger.info("Nessun risultato ottenuto dalla query.")
