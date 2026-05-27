@@ -117,6 +117,13 @@ I log del servizio sono disponibili nella cartella `logs`.
 
 4. **Configura le variabili di ambiente**
 
+   Il file `config/database.py` utilizza SQLAlchemy per creare i motori di connessione (`engine`) e seleziona il database corretto tramite l'enum `DbConnection`.
+   Le connessioni PostgreSQL impostano `pool_pre_ping=True` e `pool_recycle=900` per mantenere i pool di connessione stabili.
+
+   - `DbConnection.SIT` → database PostgreSQL principale (`DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `DB_NAME`)
+   - `DbConnection.CONFIG` → database PostgreSQL di configurazione (`DB_USER_CONFIG`, `DB_PASSWORD_CONFIG`, `DB_HOST_CONFIG`, `DB_PORT_CONFIG`, `DB_NAME_CONFIG`)
+   - `DbConnection.MAPPE` → database PostgreSQL mappe (`DB_USER_MAPPE`, `DB_PASSWORD_MAPPE`, `DB_HOST_MAPPE`, `DB_PORT_MAPPE`, `DB_NAME_MAPPE`)
+   - `DbConnection.STRADE` → database Oracle per le strade (`ORACLE_CLIENT_PATH`, `DB_USER_STRADE`, `DB_PASSWORD_STRADE`, `DB_HOST_STRADE`, `DB_PORT_STRADE`, `DB_NAME_STRADE`)
 
    Crea un file `.env` nella root del progetto e inserisci le seguenti variabili (vedi esempio):
 
@@ -135,13 +142,37 @@ I log del servizio sono disponibili nella cartella `logs`.
    DB_NAME=sit_test
    ```
 
+   **Database Configurazione:**
+   ```env
+   DB_USER_CONFIG=user_config
+   DB_PASSWORD_CONFIG=pwdsicura_config
+   DB_HOST_CONFIG=111.111.1.11
+   DB_PORT_CONFIG=5432
+   DB_NAME_CONFIG=webservice_test
+   ```
+
    **Database Mappe (per WS mappe duale):**
    ```env
+   DB_USER_MAPPE=mm
+   DB_PASSWORD_MAPPE=pwdsicura_mappe
    DB_HOST_MAPPE=111.111.1.11
    DB_PORT_MAPPE=5432
    DB_NAME_MAPPE=jj
-   DB_USER_MAPPE=mm
-   DB_PASSWORD_MAPPE=pwdsicura
+   ```
+
+   **Database Oracle Strade:**
+   ```env
+   ORACLE_CLIENT_PATH=C:\oracle\instantclient_19_29
+   DB_USER_STRADE=ws_readonly
+   DB_PASSWORD_STRADE=strade_pwd
+   DB_HOST_STRADE=111.111.1.11
+   DB_PORT_STRADE=1526
+   DB_NAME_STRADE=PEOR
+   ```
+
+   **SQLite locale (opzionale):**
+   ```env
+   SQL_LITE_PATH=C:\sqllite\security
    ```
 
    **Autenticazione JWT:**

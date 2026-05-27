@@ -135,6 +135,16 @@ def update_query_by_engine(sql: str, db: DbConnection, params=None) -> Optional[
      except Exception as e:
           logger.error(f"Errore SQL o di connessione [{db.value}]: {str(e)}")
           return None
+     
+def insert_query_by_engine(sql: str, db: DbConnection, params=None) -> Optional[int]:
+     """Esegue una query di inserimento sul database specificato tramite DbConnection enum."""
+     try:
+          with _ENGINE_MAP[db]().begin() as connection:
+               stream = connection.execute(text(sql), params or {})
+               return stream.rowcount if stream else None
+     except Exception as e:
+          logger.error(f"Errore SQL o di connessione [{db.value}]: {str(e)}")
+          return None
    
 def fetch_count_by_engine(sql,  db: DbConnection, params=None) -> int:
    """Esegue una query sul database specificato e ritorna il conteggio dei risultati."""
@@ -148,55 +158,3 @@ def fetch_count_by_engine(sql,  db: DbConnection, params=None) -> int:
    
 
 
-
-def init_security_log_db():
-    """Inizializza la tabella per i log di sicurezza se non esiste già; il database sqlite dovrebbe trovarsi in un percorso definito nella variabile d'ambiente SQL_LITE_PATH,
-      che dovrebbe essere configurata correttamente per evitare problemi di accesso al database."""
-    conn = get_security_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS security_logs
-   (
-    ip_address VARCHAR(45) PRIMARY KEY,
-    attempts INT DEFAULT 0, -- Fallimenti attuali
-    ban_count INT DEFAULT 0, -- Quante volte è stato già bannato
-    last_failure TIMESTAMP NULL,
-    blocked_until TIMESTAMP NULL,
-    last_access TIMESTAMP NULL,
-    count_access INT DEFAULT 0 -- Numero di accessi riusciti
-   )
-    """)
-    conn.commit()
-    conn.close()
-
-def init_security_log_user_db():
-    """Inizializza la tabella per i log di sicurezza se non esiste già; il database sqlite dovrebbe trovarsi in un percorso definito nella variabile d'ambiente SQL_LITE_PATH,
-      che dovrebbe essere configurata correttamente per evitare problemi di accesso al database."""
-    conn = get_security_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS security_logs_user
-   (
-    user VARCHAR(45) PRIMARY KEY,
-    attempts INT DEFAULT 0, -- Fallimenti attuali
-    ban_count INT DEFAULT 0, -- Quante volte è stato già bannato
-    last_failure TIMESTAMP NULL,
-    blocked_until TIMESTAMP NULL,
-    last_access TIMESTAMP NULL,
-    count_access INT DEFAULT 0 -- Numero di accessi riusciti
-   )
-    """)
-    conn.commit()
-    conn.close()
-
-
-def get_security_connection() -> sqlite3.Connection:
-    """Restituisce una connessione al database di sicurezza, creando cartella e db se necessario."""
-    db_path = os.getenv("SQL_LITE_PATH")
-    dir_path = os.path.dirname(db_path)
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
-    if not os.path.exists(db_path):
-        conn = sqlite3.connect(db_path)
-        conn.close()
-    return sqlite3.connect(db_path)
