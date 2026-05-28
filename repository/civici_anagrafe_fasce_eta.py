@@ -1,15 +1,13 @@
 
 
-def prepared_statement_fasce_eta() -> str:
-    """Preparazione della query per le fasce di età con filtri opzionali(cod_civico, id_via)"""
-    return  """
+# Preparazione della query per le fasce di età con filtri opzionali
+pst_fasce_eta: str = """
         SELECT * FROM strade.anagrafe_resid_civici
         WHERE (cod_via = :id_via OR :id_via IS NULL)
         AND (cod_civico = :cod_civico OR :cod_civico IS NULL)
     """
-def prepared_statement_fasce_eta_with_count()->str:
-    """Preparazione della query per il recupero di tutte le fasce di età con paginazione con filtri opzionali(cod_civico, id_via)"""
-    return """
+# Preparazione della query per le fasce di età con paginazione e filtri opzionali
+pst_fasce_eta_with_count: str = """
         SELECT * FROM (
             SELECT a.*, ROWNUM AS rnum
             FROM (

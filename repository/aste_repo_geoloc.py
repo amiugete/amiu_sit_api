@@ -1,8 +1,5 @@
-def prepared_statement_aste_geoloc() -> str:
-    """Preparazione della query per il recupero delle aste data la circoscrizione con filtri opzionali(municipio(circoscrizione),via,last_update)
-       con paginazione e total_count.
-    """
-    return  """
+# Preparazione della query per il recupero delle aste con filtri opzionali e paginazione
+pst_aste_geoloc: str = """
             SELECT id_asta, id_via, id_quartiere, id_circoscrizione as id_municipio,
               lung_asta as lung_db_m,
               round(st_length(geoloc)) as lungh_geom_m,
@@ -20,11 +17,9 @@ def prepared_statement_aste_geoloc() -> str:
 
 
 
-def prepared_statement_aste_mobile() -> str:
-    """
-    Aste per app mobile sit
-    """
-    return  """
+
+# Aste per app mobile sit
+pst_aste_mobile: str = """
        SELECT 
             a.id_asta,
             a.id_via, 

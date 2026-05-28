@@ -2,18 +2,19 @@
 
 
 
-from fastapi import APIRouter, Query, Depends, HTTPException, status, Request
-from typing import Any, List, Optional, Union
-from business.permission import check_permissions, verifica_permessi_endpoint_utente
-from business.utility import get_total_count_from_rows
-from config.database import fetch_list_by_engine, DbConnection
+from fastapi import APIRouter, Query, Depends, Request
+from typing import Any
+from business.permission import check_permissions
+from business.query_helpers import execute_paginated_query
+from business.utility import get_route_path_from_request
+from config.database import DbConnection
 from models.models import UtenzaIdea, PaginatedResponse
 import logging
 from enum import Enum
 
 # i prepared statement per le query al database sono definiti nei repository corrispondenti 
 # alla tipologia di dato restituito (es. repository/vie_repo.py per le vie, repository/piazzole_repo.py per le piazzole, ecc.).
-from repository.utenze_repo import prepared_statement_utenze_UD_idea_with_count,prepared_statement_utenze_UND_idea_with_count
+from repository.utenze_repo import pst_utenze_UD_idea_with_count, pst_utenze_UND_idea_with_count
 
 
 # In questo router sono definite delle api che restituiscono dati geografici di vario tipo (comuni, vie, piazzole, civici, quartieri, ambiti, municipi, point of interest) con filtri opzionali e paginazione. Tutti questi endpoint richiedono autenticazione tramite Bearer Token e verificano i permessi dell'utente prima di restituire i dati.
@@ -48,62 +49,13 @@ def lista_utenze(
     size: int = Query(..., ge=1, le=1000, description="Dimensione della pagina")
 ):
     """Endpoint per recuperare la lista delle utenze con autenticazione."""
-    
-    # Verifica dei permessi dell'utente per accedere a questo endpoint prendendo le informazioni dal payload ottenuto con get_current_user
-    is_auth,msg = verifica_permessi_endpoint_utente(payload, "/utenze_tari_idea")
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint}")
 
-    if not is_auth:
-        logger.warning(f"Accesso non autorizzato all'endpoint /utenze_tari per l'utente ID {payload.get('user_id')}: {msg}")
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"{msg}"
-        )
-    
-    logger.info("Ricevuta richiesta GET /utenze_tari")
-    lista_dict_utenze: List[dict] | Any = None
-    list_utenze : List[UtenzaIdea] = []
-   
-    result: PaginatedResponse[UtenzaIdea] = PaginatedResponse[UtenzaIdea]()
-    query_select = ''
-    offset = None
-    limit = None 
-
-    
-
-    if page is not None and size is not None and size > 0:
-        offset = (page - 1) * size
-        limit = size
-
-    if limit is not None and offset is not None:
-        if tipo == TipoUtenza.UD:
-            query_select = prepared_statement_utenze_UD_idea_with_count()
-        else:
-            query_select = prepared_statement_utenze_UND_idea_with_count()
-
-        lista_dict_utenze = fetch_list_by_engine(query_select, DbConnection.SIT, {"limit": limit, "offset": offset})
-
-        if lista_dict_utenze is None or len(lista_dict_utenze) == 0:
-            logger.info("Nessun risultato ottenuto dalla query.")
-            result.content = []
-            result.total = 0
-            result.page = page
-            result.size = size
-            result.pages = 0
-            return result
-
-            # estrazione total_count colonna per paginazione
-        total = get_total_count_from_rows(lista_dict_utenze)
-
-        list_utenze = [UtenzaIdea(**row) for row in lista_dict_utenze]
-
-        result.total = total
-        result.content = list_utenze
-        result.page = page
-        result.size = size
-        result.pages = (result.total + size - 1) // size if size else 0
-        logger.info(f"Restituite {result.total} utenze.")
-
-        logger.info(f"Restituite {len(list_utenze)} utenze.") 
-        return result
-
-    return result
+    query = pst_utenze_UD_idea_with_count if tipo == TipoUtenza.UD else pst_utenze_UND_idea_with_count
+    return execute_paginated_query(query, UtenzaIdea, DbConnection.SIT, {},
+                                   page,
+                                   size, 
+                                   endpoint, 
+                                   default_limit=10000, 
+                                   query_with_count=None)

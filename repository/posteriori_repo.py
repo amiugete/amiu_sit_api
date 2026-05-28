@@ -1,7 +1,7 @@
 
 
-def prepared_statement_posteriori_with_count() -> str:
-    return  """
+# Query per il recupero dei percorsi posteriori con paginazione e total_count
+pst_posteriori: str = """
 SELECT *,
        CASE WHEN :limit = 1000 AND :offset = 0 THEN 1000 ELSE COUNT(*) OVER() END AS total_count
 FROM (

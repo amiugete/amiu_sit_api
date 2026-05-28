@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Query, Depends, Request
-from business.email.email_engine import send_email_territorio
 from business.permission import check_permissions
 from typing import Any, List, Optional, Union
 import logging
 
+# helpers
+from business.query_helpers import execute_simple_query, execute_paginated_query
+
+#utility
+from business.utility import get_route_path_from_request
 
 # database
-from business.utility import get_total_count_from_rows
 from config.database import fetch_list_by_engine, DbConnection
 
 # modelli
@@ -15,17 +18,16 @@ from models.models import   GeoJSNONModel, Municipio, MyFutureModel, Piazzola, P
 
 
 #repository
-from repository.municipi_repo import prepared_statement_municipi_genova
-from repository.vie_repo import prepared_statement_vie, prepared_statement_vie_with_count
-from repository.piazzole_repo import prepared_statement_piazzole, prepared_statement_piazzole_with_count
-from repository.elementi_repo import prepared_statement_elementi, prepared_statement_elementi_with_count
-from repository.comuni_repo import prepared_statement_comuni
-from repository.civici_repo import prepared_statement_civici_with_count, prepared_statement_civici
-from repository.quartieri_repo import prepared_statement_quartieri
-from repository.ambiti_repo import prepared_statement_ambiti
-from repository.aste_repo_geoloc import prepared_statement_aste_geoloc
-from repository.point_of_interest_repo import prepared_statement_pointofinterest
-from sqlalchemy import CursorResult
+from repository.municipi_repo import pst_municipi_genova
+from repository.vie_repo import pst_vie
+from repository.piazzole_repo import pst_piazzole
+from repository.elementi_repo import pst_elementi
+from repository.comuni_repo import pst_comuni
+from repository.civici_repo import pst_civici
+from repository.quartieri_repo import pst_quartieri
+from repository.ambiti_repo import pst_ambiti
+from repository.aste_repo_geoloc import pst_aste_geoloc
+from repository.point_of_interest_repo import pst_pointofinterest
 
 
 
@@ -33,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 #router = APIRouter()
 router = APIRouter(tags=["Servizi generici"])
+
 
 # In questo router sono definite delle api che restituiscono dati geografici di vario tipo (comuni, vie, piazzole, civici, quartieri, ambiti, municipi, point of interest) con filtri opzionali e paginazione. Tutti questi endpoint richiedono autenticazione tramite Bearer Token e verificano i permessi dell'utente prima di restituire i dati.
 # I servizi che restituiscono i dati in un oggetto di tipo PaginatedResponse sono quelli che possono potenzialmente restituire liste molto grandi di risultati, mentre quelli che restituiscono i dati in formato JSON sono quelli che restituiscono liste più piccole di risultati quasi identici agli oggetti restituiti da ws_amiugis.
@@ -42,65 +45,47 @@ router = APIRouter(tags=["Servizi generici"])
 
 ##############################################################
 
-@router.get("/ambiti", response_model=List[Ambito], 
+@router.get("/ambiti", response_model=List[Ambito],
             description="Recupera la lista degli ambiti territoriali AMIU (livello sovra-comunale). Richiede autenticazione (Bearer Token).")
 def lista_ambiti(
     request: Request,
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /ambiti")
-    query_select = prepared_statement_ambiti()
-    listAmbiti = fetch_list_by_engine(query_select, DbConnection.SIT, {})
-    if listAmbiti is None or len(listAmbiti) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-    listAmbiti = [Ambito(**row) for row in listAmbiti]
-    logger.info(f"Restituiti {len(listAmbiti)} ambiti.")
-    return listAmbiti
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint}")
+    return execute_simple_query(pst_ambiti, Ambito, DbConnection.SIT, {}, endpoint)
 
 ##############################################################
 @router.get("/comuni", response_model=List[Comune],
-         description="Recupera la lista dei comuni. Richiede autenticazione (Bearer Token).")
+            description="Recupera la lista dei comuni. Richiede autenticazione (Bearer Token).")
 def lista_comuni(
     request: Request,
     id_ambito: Optional[int] = Query(None, description="Filtra per ambito"),
     cod_istat: Optional[str] = Query(None, description="Filtra per codice ISTAT"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    
-    """Endpoint per recuperare la lista dei comuni"""
-    logger.info("Ricevuta richiesta GET /comuni")
-    params = {
-        "id_ambito": id_ambito,
-        "cod_istat": cod_istat
-    }
-    query_select = prepared_statement_comuni()
-    listComuni = fetch_list_by_engine(query_select, DbConnection.SIT, params)
-    if listComuni is None or len(listComuni) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-    listComuni = [Comune(**row) for row in listComuni]
-    logger.info(f"Restituiti {len(listComuni)} comuni.")
-    return listComuni
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint}")
+    return execute_simple_query(
+        pst_comuni,
+        Comune, 
+        DbConnection.SIT,
+        {"id_ambito": id_ambito, "cod_istat": cod_istat},
+        endpoint
+    )
 
 
 
 ##############################################################
-@router.get("/municipi", response_model=List[Municipio], 
+@router.get("/municipi", response_model=List[Municipio],
             description="Recupera la lista dei municipi (per il solo Comune di Genova). Richiede autenticazione (Bearer Token).")
 def lista_municipi(
     request: Request,
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /municipi")
-    query_select = prepared_statement_municipi_genova()
-    municipi_row = fetch_list_by_engine(query_select, DbConnection.SIT, {})
-    if municipi_row is None or len(municipi_row) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-    municipi_list = [Municipio(**row) for row in municipi_row]
-    logger.info(f"Restituiti {len(municipi_list)} municipi.")
-    return municipi_list
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint}")
+    return execute_simple_query(pst_municipi_genova, Municipio, DbConnection.SIT, {}, endpoint)
 
 
 
@@ -112,24 +97,21 @@ def lista_quartieri(
     id_municipio: Optional[int] = Query(None, description="Filtra per municipio"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /quartieri")
-    params = {"id_municipio": id_municipio}
-    query_select = prepared_statement_quartieri()
-    listQuartieri = fetch_list_by_engine(query_select, DbConnection.SIT, params)
-    if listQuartieri is None or len(listQuartieri) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-    listQuartieri = [Quartiere(**row) for row in listQuartieri]
-    logger.info(f"Restituiti {len(listQuartieri)} quartieri.")
-    return listQuartieri
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint}")
+    return execute_simple_query(
+        pst_quartieri, Quartiere, DbConnection.SIT,
+        {"id_municipio": id_municipio},
+        endpoint
+    )
 
 
 
 ##############################################################
 @router.get("/vie", response_model=Union[List[Via], PaginatedResponse[Via]],
-            description="""Recupera la lista delle vie con filtri opzionali. 
+            description="""Recupera la lista delle vie con filtri opzionali.
              Richiede autenticazione (Bearer Token).
-             Paginazione opzionale gestita tramite parametri page e size nella request.""", )
+             Paginazione opzionale gestita tramite parametri page e size nella request.""")
 def lista_vie(
     request: Request,
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
@@ -137,47 +119,18 @@ def lista_vie(
     id_comune: Optional[int] = Query(None, description="Filtra per comune"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /vie")
-    listVie: CursorResult[Any]
-    query_select = ''
-    offset = None
-    limit = None 
-
-    if page is not None and size is not None and size > 0:
-        offset = (page - 1) * size
-        limit = size
-
-    params = {"comune": id_comune}
-
-    if limit is not None and offset is not None:
-        query_select = prepared_statement_vie_with_count()
-        listVie = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
-
-        if listVie is None or len(listVie) == 0:
-            logger.info("Nessun risultato ottenuto dalla query.")
-            return []
-        total = get_total_count_from_rows(listVie)
-        listVie = [Via(**row) for row in listVie]
-        result = PaginatedResponse[Via]()
-        result.total = total
-        result.content = listVie
-        result.page = page
-        result.size = size
-        result.pages = (result.total + size - 1) // size if size else 0
-        logger.info(f"Restituite {result.total} vie.")
-    else:
-        query_select = prepared_statement_vie()
-        listVie = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
-
-        if listVie is None or len(listVie) == 0:
-            logger.info("Nessun risultato ottenuto dalla query.")
-            return []
-
-        listVie = [Via(**row) for row in listVie]
-        logger.info(f"Restitute {len(listVie)} vie.") 
-        return listVie
-
-    return result
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint}")
+    return execute_paginated_query(
+        pst_vie,
+        Via, DbConnection.SIT,
+        {"comune": id_comune},
+        page,
+        size,
+        endpoint,
+        default_limit=10000,
+        query_with_count = None
+    )
 
 
 
@@ -201,7 +154,7 @@ def lista_aste(
     last_update: Optional[str] = Query(None, description="Filtra per data di ultima modifica (YYYYMMDD)"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /aste")
+    logger.info(f"Ricevuta richiesta GET {get_route_path_from_request(request)}")
     offset = 0
     limit = 1000
 
@@ -210,7 +163,7 @@ def lista_aste(
         limit = size
 
     params = {"limit": limit, "offset": offset, "last_update": last_update, "id_via": id_via, "id_municipio": id_municipio}
-    query_aste = prepared_statement_aste_geoloc()
+    query_aste = pst_aste_geoloc
     listAste = fetch_list_by_engine(query_aste, DbConnection.SIT, params)
     total = 0
     if listAste is None or len(listAste) == 0:
@@ -252,7 +205,7 @@ def lista_aste(
 
 
 ##############################################################
-@router.get("/civici", response_model=Union[PaginatedResponse[Civico], List[Civico]] , 
+@router.get("/civici", response_model=Union[PaginatedResponse[Civico], List[Civico]],
             description="""Recupera la lista dei civici (per ora del solo Comune di Genova) con filtri opzionali.
             Richiede autenticazione (Bearer Token).
             Paginazione opzionale gestita tramite parametri page e size nella request.""")
@@ -262,61 +215,32 @@ def lista_civici(
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
     id_municipio: Optional[int] = Query(None, description="Filtra per municipio"),
     id_via: Optional[int] = Query(None, description="Filtra per via"),
-    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
+    last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD", pattern=r"^\d{8}$"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /civici")
-    listCivici: List[dict] | None
-    query_select = ''
-    offset = None
-    limit = None 
-    
-    if page is not None and size is not None and size > 0:     
-        offset = (page - 1) * size
-        limit = size
-    
-    params = {"id_municipio": id_municipio, "id_via": id_via, "ins_date": last_update}
-    
-    if limit is not None and offset is not None:
-        query_select = prepared_statement_civici_with_count()
-        listCivici = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
-
-        if listCivici is None or len(listCivici) == 0:
-            logger.info("Nessun risultato ottenuto dalla query.")
-            return []
-        # estrazione total_count colonna per paginazione
-        total = get_total_count_from_rows(listCivici)
-        listCivici = [Civico(**row) for row in listCivici]
-        result = PaginatedResponse[Civico]()
-        result.total = total
-        result.content = listCivici
-        result.page = page
-        result.size = size
-        result.pages = (result.total + size - 1) // size if size else 0
-        logger.info(f"Restituiti {result.total} civici.")
-    else:
-        query_select = prepared_statement_civici()
-        listCivici = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
-
-        if listCivici is None or len(listCivici) == 0:
-            logger.info("Nessun risultato ottenuto dalla query.")
-            return []
-        listCivici = [Civico(**row) for row in listCivici]
-        logger.info(f"Restituiti {len(listCivici)} civici.") 
-        return listCivici
-    
-    return result
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint}")
+    return execute_paginated_query(
+        pst_civici,
+        Civico, DbConnection.SIT,
+        {"id_municipio": id_municipio, "id_via": id_via, "ins_date": last_update},
+        page,
+        size, 
+        endpoint,
+        default_limit=10000,
+        query_with_count=None
+    )
 
 
 
 ##############################################################
-@router.get("/piazzole", response_model=Union[List[Piazzola],PaginatedResponse[Piazzola]],
+@router.get("/piazzole", response_model=Union[List[Piazzola], PaginatedResponse[Piazzola]],
             description="""Recupera la lista delle piazzole con filtri opzionali.
             Richiede autenticazione (Bearer Token).
-            Paginazione opzionale gestita tramite parametri page e size nella request.""", )
+            Paginazione opzionale gestita tramite parametri page e size nella request.""")
 def lista_piazzole(
     request: Request,
-    page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
+    page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
     id_comune: Optional[int] = Query(None, description="Filtra per comune"),
     id_municipio: Optional[int] = Query(None, description="Filtra per municipio"),
@@ -324,51 +248,19 @@ def lista_piazzole(
     pap: Optional[int] = Query(None, ge=0, le=1, description="Filtra per PAP (1 = Sì, 0 = No)"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /piazzole")
-    listPiazzole: CursorResult[Any]
-    query_select = ''
-    offset = None
-    limit = None 
-
-    if page is not None and size is not None and size > 0:     
-        offset = (page - 1) * size
-        limit = size
-
-    params = {"pap": pap if pap is not None else 0, "via": id_via, "comune": id_comune, "municipio": id_municipio}
-
-    # Query per il ritorno del risultato paginato
-    if limit is not None and offset is not None:
-        query_select = prepared_statement_piazzole_with_count()
-        listPiazzole = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
-
-        if listPiazzole is None or len(listPiazzole) == 0:
-            logger.info("Nessun risultato ottenuto dalla query.")
-            return []
-        # estrazione total_count colonna per paginazione
-        total = get_total_count_from_rows(listPiazzole)
-        
-        listPiazzole = [Piazzola(**row) for row in listPiazzole]
-        result = PaginatedResponse[Piazzola]()
-        result.total = total
-        result.content = listPiazzole
-        result.page = page
-        result.size = size
-        result.pages = (result.total + size - 1) // size if size else 0
-        logger.info(f"Restituiti {result.total} piazzole.")
-    # Query per il ritorno del risultato non paginato
-    else:
-        query_select = prepared_statement_piazzole()
-        listPiazzole = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
-
-        if listPiazzole is None or len(listPiazzole) == 0:
-            logger.info("Nessun risultato ottenuto dalla query.")
-            return []
-
-        listPiazzole = [Piazzola(**row) for row in listPiazzole]
-        logger.info(f"Restituiti {len(listPiazzole)} piazzole.") 
-        return listPiazzole
-
-    return result
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint}")
+    return execute_paginated_query(
+        pst_piazzole,
+        Piazzola,
+        DbConnection.SIT,
+        {"pap": pap if pap is not None else 0, "via": id_via, "comune": id_comune, "municipio": id_municipio},
+        page, 
+        size,
+        endpoint,
+        default_limit=10000,
+        query_with_count=None
+    )
 
 
 @router.get("/elementi", response_model=Union[List[Elemento], PaginatedResponse[Elemento]],
@@ -387,68 +279,29 @@ def lista_elementi(
     ),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /elementi")
-    listElementi: CursorResult[Any]
-    query_select = ''
-    offset = None
-    limit = None
-
-    if page is not None and size is not None and size > 0:
-        offset = (page - 1) * size
-        limit = size
-
-    params = {"id_piazzola": id_piazzola, "last_update": last_update}
-
-    # Query per il ritorno del risultato paginato
-    if limit is not None and offset is not None:
-        query_select = prepared_statement_elementi_with_count()
-        listElementi = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
-
-        if listElementi is None or len(listElementi) == 0:
-            logger.info("Nessun risultato ottenuto dalla query.")
-            return []
-        # estrazione total_count colonna per paginazione
-        total = get_total_count_from_rows(listElementi)
-
-        listElementi = [Elemento(**row) for row in listElementi]
-        result = PaginatedResponse[Elemento]()
-        result.total = total
-        result.content = listElementi
-        result.page = page
-        result.size = size
-        result.pages = (result.total + size - 1) // size if size else 0
-        logger.info(f"Restituiti {result.total} elementi.")
-    # Query per il ritorno del risultato non paginato
-    else:
-        query_select = prepared_statement_elementi()
-        listElementi = fetch_list_by_engine(query_select, DbConnection.SIT, {**params, "limit": limit, "offset": offset})
-
-        if listElementi is None or len(listElementi) == 0:
-            logger.info("Nessun risultato ottenuto dalla query.")
-            return []
-
-        listElementi = [Elemento(**row) for row in listElementi]
-        logger.info(f"Restituiti {len(listElementi)} elementi.")
-        return listElementi
-
-    return result
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint}")
+    return execute_paginated_query(
+        pst_elementi,
+        Elemento, DbConnection.SIT,
+        {"id_piazzola": id_piazzola, "last_update": last_update},
+        page,
+        size,
+        endpoint,
+        default_limit=10000,
+        query_with_count=None
+    )
 
 @router.get("/POI", response_model=List[PointOfInterest],
-            description="""Recupera i dettagli dei Punti di Interesse (Rimesse, UT e Scarichi vari). 
+            description="""Recupera i dettagli dei Punti di Interesse (Rimesse, UT e Scarichi vari).
             Richiede autenticazione (Bearer Token).""")
 def lista_point_of_interest(
-        request: Request,
-        payload: dict[str, Any] = Depends(check_permissions)
+    request: Request,
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /point of interest")
-    query_select = prepared_statement_pointofinterest()
-    listPointOfInterest = fetch_list_by_engine(query_select, DbConnection.SIT, {})
-    if listPointOfInterest is None or len(listPointOfInterest) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-    listPointOfInterest = [PointOfInterest(**row) for row in listPointOfInterest]
-    logger.info(f"Restituiti {len(listPointOfInterest)} point of interest.")
-    return listPointOfInterest
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint}")
+    return execute_simple_query(pst_pointofinterest, PointOfInterest, DbConnection.SIT, {}, endpoint)
 
 
 

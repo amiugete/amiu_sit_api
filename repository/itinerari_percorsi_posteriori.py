@@ -1,8 +1,7 @@
 
         # Query aggiornata per percorsi posteriori (come da richiesta)
-def prepared_statement_percorsi_posteriori_aggiornata() -> str:
-        """Query per elenco deglui elementi posteriori, con paginazione, filtro last_update e total_count."""
-        return """
+# Query per elenco degli elementi posteriori, con paginazione, filtro last_update e total_count
+pst_percorsi_posteriori_aggiornata: str = """
             SELECT DISTINCT codice_modello_servizio AS cod_percorso, ordine, codice AS id_elemento, frequenza AS id_frequenza,
                 fo.descrizione_long, data_inizio, data_fine, id_asta_percorso, ripasso, ep.freq_settimane AS periodicita,
                 to_char(dmi.data_ultima_modifica, 'YYYYMMDD') AS data_ultima_modifica,

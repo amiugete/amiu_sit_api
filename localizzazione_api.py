@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Query, HTTPException, Depends, Request
 from business.permission import check_permissions
+from business.query_helpers import execute_simple_query
 from typing import Any, List
-from config.database import fetch_list_by_engine, DbConnection
+from business.utility import get_route_path_from_request
+from config.database import DbConnection
 from models.models import Point2Area
-from repository.localizzazione_repo import prepared_statement_point2area
+from repository.localizzazione_repo import pst_point2area
 import logging
 
 logger = logging.getLogger(__name__)
@@ -24,21 +26,10 @@ def get_area_from_point(
     """
     Dato un punto geografico (lat, lon), restituisce le informazioni sull'area geografica di appartenenza.
     """
-    logger.info(f"Ricevuta richiesta GET /point2area con lat={lat}, lon={lon}")
-    
-    query = prepared_statement_point2area()
-    params = {"lat": lat, "lon": lon}
-    
-    area_rows: List[dict] | None = fetch_list_by_engine(query, DbConnection.SIT, params)
-
-    if area_rows is None or len(area_rows) == 0:
-        logger.warning(f"Nessun risultato per le coordinate lat={lat}, lon={lon}.")
-        raise HTTPException(status_code=404, detail="Nessuna area trovata per le coordinate fornite.")
-
-    result_list = [Point2Area(**row) for row in area_rows]
-
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint} con lat={lat}, lon={lon}")
+    result_list = execute_simple_query(pst_point2area, Point2Area, DbConnection.SIT, {"lat": lat, "lon": lon}, endpoint)
     if not result_list:
-        logger.warning(f"Nessun risultato mappato per le coordinate lat={lat}, lon={lon}.")
+        logger.info(f"Nessuna area trovata per le coordinate fornite in {endpoint} con lat={lat}, lon={lon}")
         raise HTTPException(status_code=404, detail="Nessuna area trovata per le coordinate fornite.")
-
     return result_list

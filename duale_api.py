@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Query, Depends, HTTPException, Request
 from typing import Any, List
 from business.permission import check_permissions
+from business.query_helpers import execute_simple_query
 import logging
 from enum import Enum
 
 # database
+from business.utility import get_route_path_from_request
 from config.database import fetch_list_by_engine, DbConnection
 
 # models
@@ -12,7 +14,7 @@ from models.models import  LayerFilterResponse, Mappa
 
 # repository
 from repository.layer_filter_repo import get_layer_filter_query
-from repository.mappe_repo import prepared_statement_mappe
+from repository.mappe_repo import pst_mappe
 
 logger = logging.getLogger(__name__)
 
@@ -30,16 +32,10 @@ def mappe(
     request: Request,
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /mappe")
-    query_select = prepared_statement_mappe()
-    listaMappe = fetch_list_by_engine(query_select, DbConnection.MAPPE, {})
-    if listaMappe is None or len(listaMappe) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-    listaMappe = [Mappa(**row) for row in listaMappe]
-    logger.info(f"Restituite {len(listaMappe)} mappe.")
-    return listaMappe
-
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint}")
+    return execute_simple_query(pst_mappe, Mappa, DbConnection.MAPPE, {}, endpoint)
+    
 
 
 
@@ -60,7 +56,8 @@ def get_layer_filter(
     n: str = Query(..., description="Nome da usare nel filtro"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info(f"Ricevuta richiesta GET /layer_filter con t={t}, l={l.value}, n={n}")
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint} con t={t}, l={l.value}, n={n}")
     
     try:
         query = get_layer_filter_query(level=l.value)
@@ -74,7 +71,7 @@ def get_layer_filter(
     layer_rows = fetch_list_by_engine(query, DbConnection.SIT, params)
     
     if layer_rows is None or len(layer_rows) == 0:
-        logger.info(f"Nessun risultato ottenuto dalla query per /layer_filter con parametri t={t}, l={l.value}, n={n}")
+        logger.info(f"Nessun risultato ottenuto dalla query per {endpoint} con parametri t={t}, l={l.value}, n={n}")
         return []
 
     result_list = [LayerFilterResponse(**row) for row in layer_rows]

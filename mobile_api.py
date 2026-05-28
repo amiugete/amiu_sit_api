@@ -1,8 +1,10 @@
 
 from fastapi import APIRouter, Query, HTTPException, Depends, Response, Body, Request
 from business.permission import check_permissions
+from business.utility import get_route_path_from_request
+from business.query_helpers import execute_simple_query
 from typing import Any, List, Optional
-from config.database import fetch_list_by_engine, update_query_by_engine, DbConnection
+from config.database import DbConnection, update_query_by_engine
 from models.models import AstaMobile, ImmagineUploadFromSitMobile,PiazzolaMobile
 import logging
 from pathlib import Path
@@ -10,8 +12,8 @@ import base64
 import os
 from dotenv import load_dotenv
 
-from repository.aste_repo_geoloc import prepared_statement_aste_mobile
-from repository.piazzole_repo import prepared_statement_aste_mobile_update_foto, prepared_statement_piazzole, prepared_statement_piazzole_mobile, prepared_statement_piazzole_mobile_all_date, prepared_statement_piazzole_with_count
+from repository.aste_repo_geoloc import pst_aste_mobile
+from repository.piazzole_repo import pst_aste_mobile_update_foto, pst_piazzole_mobile, pst_piazzole_mobile_all_date
 
 load_dotenv()
 
@@ -42,7 +44,7 @@ def upload_foto_piazzola(
     
     file_path.write_bytes(file_bytes)
 
-    query_update = prepared_statement_aste_mobile_update_foto()
+    query_update = pst_aste_mobile_update_foto
 
     params = {"id_piazzola": imageBody.id_piazzola, "foto": 1}
 
@@ -64,21 +66,15 @@ def lista_piazzole(
     data_eliminazione: Optional[str] = Query(None, description="Filtra per data di eliminazione (formato YYYYMMDDHHMM)"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /piazzole")
     
-    params = { "via": id_via, "comune": id_comune, "last_update": last_update, "data_eliminazione": data_eliminazione }
-
-    query_select = prepared_statement_piazzole_mobile_all_date() if last_update is not None and data_eliminazione is not None else prepared_statement_piazzole_mobile()
-    listPiazzole = fetch_list_by_engine(query_select, DbConnection.SIT, {**params})
-
-    if listPiazzole is None or len(listPiazzole) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-
-    listPiazzole = [PiazzolaMobile(**row) for row in listPiazzole]
-    logger.info(f"Restituiti {len(listPiazzole)} piazzole.")
-    
-    return listPiazzole
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint} ")
+    query = pst_piazzole_mobile_all_date if last_update is not None and data_eliminazione is not None else pst_piazzole_mobile
+    return execute_simple_query(
+        query, PiazzolaMobile, DbConnection.SIT,
+        {"via": id_via, "comune": id_comune, "last_update": last_update, "data_eliminazione": data_eliminazione},
+        endpoint
+    )
 
 
 ####################### Servizio delle aste con data di ultimo aggiornamento e data eliminazione #######################################
@@ -91,19 +87,13 @@ def lista_aste(
     data_ultima_modifica: Optional[str] = Query(None, description="Filtra per data di ultimo aggiornamento (formato YYYYMMDDHHmm)"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /aste")
-    
-    params = { "id_via": id_via, "data_ultima_modifica": data_ultima_modifica }
-
-    query_select = prepared_statement_aste_mobile()
-    listAste = fetch_list_by_engine(query_select, DbConnection.SIT, {**params})
-
-    if listAste is None or len(listAste) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-
-    listAste = [AstaMobile(**row) for row in listAste]
-    logger.info(f"Restituiti {len(listAste)} aste.")
-    
-    return listAste
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint}")
+    return execute_simple_query(
+        pst_aste_mobile,
+        AstaMobile,
+        DbConnection.SIT,
+        {"id_via": id_via, "data_ultima_modifica": data_ultima_modifica},
+        endpoint
+    )
 

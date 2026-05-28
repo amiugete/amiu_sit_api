@@ -1,15 +1,14 @@
 from fastapi import APIRouter, Query, Depends, Request
 from typing import Any, List, Optional
 from business.permission import check_permissions
-from config.database import fetch_list_by_engine, DbConnection
-from business.utility import get_total_count_from_rows
+from business.query_helpers import execute_simple_query
+from business.utility import get_route_path_from_request
+from config.database import DbConnection
 import logging
 
 # i prepared statement per le query al database sono definiti nei repository corrispondenti 
 # alla tipologia di dato restituito (es. repository/vie_repo.py per le vie, repository/piazzole_repo.py per le piazzole, ecc.).
-from repository.bilaterali_repo import prepared_statement_bilaterali_albero,prepared_statement_bilaterali, prepared_statement_percorso_dettaglio
-
-from config.database import fetch_list_by_engine, DbConnection
+from repository.bilaterali_repo import pst_bilaterali_albero, pst_bilaterali, pst_percorso_dettaglio
 
 from models.models import PercorsoDettaglio,Bilaterali_albero,Bilaterali
 
@@ -36,19 +35,9 @@ def elenco_percorsi_bilaterali_tree(
     payload: dict[str, Any] = Depends(check_permissions)
 ):
     """Endpoint per recuperare la lista dei percorsi bilaterali ad albero con autenticazione."""
-    
-    logger.info("Ricevuta richiesta GET /elenco_percorsi_bilaterali_tree")
-
-    query_select = prepared_statement_bilaterali_albero()
-    list_bilaterali_albero = fetch_list_by_engine(query_select, DbConnection.SIT, {})
-
-    if list_bilaterali_albero is None or len(list_bilaterali_albero) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-    
-    list_bilaterali_albero = [Bilaterali_albero(**row) for row in list_bilaterali_albero]
-    logger.info(f"Restituiti {len(list_bilaterali_albero)} percorsi bilaterali ad albero.")
-    return list_bilaterali_albero
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint}")
+    return execute_simple_query(pst_bilaterali_albero, Bilaterali_albero, DbConnection.SIT, {}, endpoint)
 
 
 @router.get("/elenco_percorsi_bilaterali",
@@ -58,19 +47,9 @@ def elenco_percorsi_bilaterali(
     payload: dict[str, Any] = Depends(check_permissions)
 ):
     """Endpoint per recuperare la lista dei percorsi bilaterali con autenticazione."""
-      
-    logger.info("Ricevuta richiesta GET /elenco_percorsi_bilaterali")
-
-    query_select = prepared_statement_bilaterali()
-    list_bilaterali = fetch_list_by_engine(query_select, DbConnection.SIT, {})
-
-    if list_bilaterali is None or len(list_bilaterali) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-    
-    list_bilaterali = [Bilaterali(**row) for row in list_bilaterali]
-    logger.info(f"Restituiti {len(list_bilaterali)} percorsi bilaterali.")
-    return list_bilaterali
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint}")
+    return execute_simple_query(pst_bilaterali, Bilaterali, DbConnection.SIT, {}, endpoint)
 
 
 
@@ -83,17 +62,7 @@ def dettagli_percorso(
     payload: dict[str, Any] = Depends(check_permissions)
 ):
     """Endpoint per recuperare i dettagli del percorso con autenticazione."""
-    
-    logger.info("Ricevuta richiesta GET /dettagli_percorso")
-    query_select = prepared_statement_percorso_dettaglio()
-    dettaglio_list = fetch_list_by_engine(query_select, DbConnection.SIT, {"id": id})
-
-    if dettaglio_list is None or len(dettaglio_list) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-    
-    dettaglio_list = [PercorsoDettaglio(**row) for row in dettaglio_list]
-    logger.info(f"Restituiti {len(dettaglio_list)} dettagli percorso.")
-
-    return dettaglio_list
+    endpoint = get_route_path_from_request(request)
+    logger.info(f"Ricevuta richiesta GET {endpoint}")
+    return execute_simple_query(pst_percorso_dettaglio, PercorsoDettaglio, DbConnection.SIT, {"id": id}, endpoint)
 

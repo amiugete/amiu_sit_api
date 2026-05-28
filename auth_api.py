@@ -5,7 +5,7 @@ from business.email.email_engine import send_email_territorio
 from config.database import fetch_list_by_engine, fetch_one_by_engine, update_query_by_engine, insert_query_by_engine, DbConnection
 from models.models import SecurityLogUser, User, UserPermission,UserRoles,SecurityLog,Block
 from repository.users_repo import pst_check_user_db, pst_user_roles, pst_user_roles
-from repository.security_repo import get_security_log_by_user, insert_security_log_user, reset_attempts_and_ban_count_user, update_access_log, update_access_log_user, update_attempts0_block_24h_user, update_attempts0_block_30min, update_attempts0_block_24h, update_attempts0_block_30min_user, update_attempts0_block_permanent, get_security_log_by_ip, insert_security_log, update_attempts0_block_permanent_user, update_attempts_only, reset_attempts_and_ban_count, update_attempts_only_user
+from repository.security_repo import pst_security_log_by_user, pst_insert_security_log_user, pst_reset_attempts_and_ban_count_user, pst_update_access_log, pst_update_access_log_user, pst_update_attempts0_block_24h_user, pst_update_attempts0_block_30min, pst_update_attempts0_block_24h, pst_update_attempts0_block_30min_user, pst_update_attempts0_block_permanent, pst_security_log_by_ip, pst_insert_security_log, pst_update_attempts0_block_permanent_user, pst_update_attempts_only, pst_reset_attempts_and_ban_count, pst_update_attempts_only_user
 import logging
 from fastapi.security import OAuth2PasswordBearer, HTTPBearer
 from passlib.context import CryptContext
@@ -128,7 +128,7 @@ async def login(request: Request,
         
     ############### VErifica presenza utente nel database #######################
     try:
-        user_record = fetch_one_by_engine(pst_check_user_db(), DbConnection.CONFIG, {"username": username})
+        user_record = fetch_one_by_engine(pst_check_user_db, DbConnection.CONFIG, {"username": username})
         if not user_record:
             logger.warning(f"Utente {username} non trovato nel database.")
             raise HTTPException(
@@ -146,7 +146,7 @@ async def login(request: Request,
     user = User(**user_record)
 
     ######### Recupero i permessi associati all'utente per includerli nel token JWT, in modo da poterli utilizzare per l'autorizzazione a livello di endpoint. Se l'utente non ha permessi specifici, il token conterrà comunque un campo "permessi" vuoto, che potrà essere gestito dagli endpoint per negare l'accesso se necessario. #########
-    rows_utente_permission = fetch_list_by_engine(pst_user_roles(),
+    rows_utente_permission = fetch_list_by_engine(pst_user_roles,
                                                   DbConnection.CONFIG, 
                                                   {"id_user": user.id})
     #### Creo la lista di permessi a partire dalle righe restituite dalla query, estraendo il campo "permesso" da ogni riga. Se l'utente non ha permessi specifici, questa lista sarà vuota. #####
@@ -180,14 +180,14 @@ def get_client_ip(request: Request):
 
 def select_security_log_by_ip(ip: str) -> Optional[SecurityLog]:
     """Controlla se esiste un record di sicurezza per l'IP specificato e restituisce un oggetto SecurityLog o None."""
-    row = fetch_one_by_engine(get_security_log_by_ip(), DbConnection.CONFIG, {"ip_address": ip})
+    row = fetch_one_by_engine(pst_security_log_by_ip, DbConnection.CONFIG, {"ip_address": ip})
     if row:
         return SecurityLog(**row)
     return None
 
 def select_security_log_user_by_user(user: str) -> Optional[SecurityLogUser]:
     """Controlla se esiste un record di sicurezza per l'utente specificato e restituisce un oggetto SecurityLogUser o None."""
-    row = fetch_one_by_engine(get_security_log_by_user(), DbConnection.CONFIG, {"user": user})
+    row = fetch_one_by_engine(pst_security_log_by_user, DbConnection.CONFIG, {"user": user})
     if row:
         return SecurityLogUser(**row)
     return None
@@ -195,17 +195,17 @@ def select_security_log_user_by_user(user: str) -> Optional[SecurityLogUser]:
 
 def insert_security_log_for_ip(ip: str):
     """Inserisce un nuovo record di sicurezza per l'IP specificato con attempts=0 e ban_count=0."""
-    insert_query_by_engine(insert_security_log(), DbConnection.CONFIG, {"ip_address": ip})
+    insert_query_by_engine(pst_insert_security_log, DbConnection.CONFIG, {"ip_address": ip})
 
 def insert_security_log_for_user(user: str):
     """Inserisce un nuovo record di sicurezza per l'utente specificato con attempts=0 e ban_count=0."""
-    insert_query_by_engine(insert_security_log_user(), DbConnection.CONFIG, {"user": user})
+    insert_query_by_engine(pst_insert_security_log_user, DbConnection.CONFIG, {"user": user})
 
 def reset_log_security(ip: str):
-    update_query_by_engine(reset_attempts_and_ban_count(), DbConnection.CONFIG, {"ip_address": ip})
+    update_query_by_engine(pst_reset_attempts_and_ban_count, DbConnection.CONFIG, {"ip_address": ip})
 
 def reset_log_security_user(user: str):
-    update_query_by_engine(reset_attempts_and_ban_count_user(), DbConnection.CONFIG, {"user": user})
+    update_query_by_engine(pst_reset_attempts_and_ban_count_user, DbConnection.CONFIG, {"user": user})
 
 def manage_security_log_on_failure(securityLog_record: SecurityLog) -> Tuple[bool, Block]:
     """
@@ -221,19 +221,19 @@ def manage_security_log_on_failure(securityLog_record: SecurityLog) -> Tuple[boo
         # Caso: meno di 3 tentativi falliti, solo incremento del contatore
         if securityLog_record.attempts < 3:
             new_attempts = securityLog_record.attempts + 1
-            update_query_by_engine(update_attempts_only(), DbConnection.CONFIG, {"attempts": new_attempts, "ip_address": securityLog_record.ip_address})
+            update_query_by_engine(pst_update_attempts_only, DbConnection.CONFIG, {"attempts": new_attempts, "ip_address": securityLog_record.ip_address})
             return False, None
         # Caso: 3 tentativi falliti, primo blocco temporaneo di 30 minuti
         elif securityLog_record.attempts == 3 and securityLog_record.ban_count == 0:
-            update_query_by_engine(update_attempts0_block_30min(), DbConnection.CONFIG, {"ip_address": securityLog_record.ip_address})
+            update_query_by_engine(pst_update_attempts0_block_30min, DbConnection.CONFIG, {"ip_address": securityLog_record.ip_address})
             return True, Block.MIN_30
         # Caso: 3 tentativi falliti, secondo blocco temporaneo di 24 ore
         elif securityLog_record.attempts == 3 and securityLog_record.ban_count == 1:
-            update_query_by_engine(update_attempts0_block_24h(), DbConnection.CONFIG, {"ip_address": securityLog_record.ip_address})
+            update_query_by_engine(pst_update_attempts0_block_24h, DbConnection.CONFIG, {"ip_address": securityLog_record.ip_address})
             return True, Block.H_24
         # Caso: 3 tentativi falliti, blocco permanente
         elif securityLog_record.attempts == 3 and securityLog_record.ban_count >= 2:
-            update_query_by_engine(update_attempts0_block_permanent(), DbConnection.CONFIG, {"ip_address": securityLog_record.ip_address})
+            update_query_by_engine(pst_update_attempts0_block_permanent, DbConnection.CONFIG, {"ip_address": securityLog_record.ip_address})
             return True, Block.PERMANENT
         
         return False, None
@@ -252,19 +252,19 @@ def manage_security_log_user_on_failure(securityLog_record: SecurityLogUser) -> 
         # Caso: meno di 3 tentativi falliti, solo incremento del contatore
         if securityLog_record.attempts < 3:
             new_attempts = securityLog_record.attempts + 1
-            update_query_by_engine(update_attempts_only_user(), DbConnection.CONFIG, {"attempts": new_attempts, "user": securityLog_record.user})
+            update_query_by_engine(pst_update_attempts_only_user, DbConnection.CONFIG, {"attempts": new_attempts, "user": securityLog_record.user})
             return False, None
         # Caso: 3 tentativi falliti, primo blocco temporaneo di 30 minuti
         elif securityLog_record.attempts == 3 and securityLog_record.ban_count == 0:
-            update_query_by_engine(update_attempts0_block_30min_user(), DbConnection.CONFIG, {"user": securityLog_record.user})
+            update_query_by_engine(pst_update_attempts0_block_30min_user, DbConnection.CONFIG, {"user": securityLog_record.user})
             return True, Block.MIN_30
         # Caso: 3 tentativi falliti, secondo blocco temporaneo di 24 ore
         elif securityLog_record.attempts == 3 and securityLog_record.ban_count == 1:
-            update_query_by_engine(update_attempts0_block_24h_user(), DbConnection.CONFIG, {"user": securityLog_record.user})
+            update_query_by_engine(pst_update_attempts0_block_24h_user, DbConnection.CONFIG, {"user": securityLog_record.user})
             return True, Block.H_24
         # Caso: 3 tentativi falliti, blocco permanente
         elif securityLog_record.attempts == 3 and securityLog_record.ban_count >= 2:
-            update_query_by_engine(update_attempts0_block_permanent_user(), DbConnection.CONFIG, {"user": securityLog_record.user})
+            update_query_by_engine(pst_update_attempts0_block_permanent_user, DbConnection.CONFIG, {"user": securityLog_record.user})
             return True, Block.PERMANENT
         
         return False, None
@@ -279,11 +279,11 @@ def send_email_on_block(block_ref:str, block_type: Block):
 
 def register_access_log(ip: str):
     """Aggiorna last_access e incrementa count_access dopo un login riuscito."""
-    update_query_by_engine(update_access_log(), DbConnection.CONFIG, {"ip_address": ip})
+    update_query_by_engine(pst_update_access_log, DbConnection.CONFIG, {"ip_address": ip})
 
 def register_access_log_user(user: str):
     """Aggiorna last_access e incrementa count_access dopo un login riuscito."""
-    update_query_by_engine(update_access_log_user(), DbConnection.CONFIG, {"user": user})
+    update_query_by_engine(pst_update_access_log_user, DbConnection.CONFIG, {"user": user})
 
 
 

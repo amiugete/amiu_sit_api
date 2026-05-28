@@ -1,8 +1,7 @@
 
 
-def prepared_statement_piazzole_amiu() -> str:
-    """Preparazione della query per il recupero dei posteriori con filtri opzionali(pap,via,comune,municipio)"""
-    return  """
+# Preparazione della query per il recupero delle piazzole amiu con paginazione e filtro last_update
+pst_piazzole_amiu: str = """
               SELECT *,CASE WHEN :limit = 1000 AND :offset = 0 THEN 1000 ELSE COUNT(*) OVER() END AS total_count
               from
                 (select 
