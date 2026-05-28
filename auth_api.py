@@ -2,9 +2,9 @@ from fastapi import APIRouter, Form, HTTPException, status,Request #, Query, Dep
 from pydantic import SecretStr
 
 from business.email.email_engine import send_email_territorio
-from config.database import fetch_one_by_engine, update_query_by_engine, insert_query_by_engine, DbConnection
-from models.models import SecurityLogUser, User,UserRoles,SecurityLog,Block
-from repository.users_repo import check_user_db, get_user_roles
+from config.database import fetch_list_by_engine, fetch_one_by_engine, update_query_by_engine, insert_query_by_engine, DbConnection
+from models.models import SecurityLogUser, User, UserPermission,UserRoles,SecurityLog,Block
+from repository.users_repo import pst_check_user_db, pst_user_roles, pst_user_roles
 from repository.security_repo import get_security_log_by_user, insert_security_log_user, reset_attempts_and_ban_count_user, update_access_log, update_access_log_user, update_attempts0_block_24h_user, update_attempts0_block_30min, update_attempts0_block_24h, update_attempts0_block_30min_user, update_attempts0_block_permanent, get_security_log_by_ip, insert_security_log, update_attempts0_block_permanent_user, update_attempts_only, reset_attempts_and_ban_count, update_attempts_only_user
 import logging
 from fastapi.security import OAuth2PasswordBearer, HTTPBearer
@@ -23,8 +23,8 @@ bearer_scheme = HTTPBearer()
 
 router = APIRouter()
 
-
-
+############################################################################################################################################################################
+#################################################################################################################################
 ###########################################      API        ################################################################
 @router.post("/token", description="Genera un token JWT per autenticare")
 async def login(request: Request,
@@ -127,10 +127,8 @@ async def login(request: Request,
         logger.info(f"Autenticazione riuscita per l'utente {username}")
         
     ############### VErifica presenza utente nel database #######################
-    user_query = check_user_db(username)
-
     try:
-        user_record = fetch_one_by_engine(user_query, DbConnection.SIT, {"name": username})
+        user_record = fetch_one_by_engine(pst_check_user_db(), DbConnection.CONFIG, {"username": username})
         if not user_record:
             logger.warning(f"Utente {username} non trovato nel database.")
             raise HTTPException(
@@ -145,22 +143,19 @@ async def login(request: Request,
             detail="Errore utente non trovato",
         )    
     
-    # Creazione dell'oggetto User con i dati recuperati dal database per inserimento parametri nel token JWT
     user = User(**user_record)
 
-    # Una volta ottenuto l'utente verifico se ha il permesso per l'utenze e lo aggiungo al token come parametro per poterlo utilizzare nei servizi che richiedono questo permesso specifico####
-    # Per eventuali futuri permessi, si potrebbe implementare una logica simile per aggiungere altri parametri al token in base ai permessi dell'utente, in modo da avere un token più ricco di informazioni sui privilegi dell'utente.
-    user_roles_query = get_user_roles()
-    utente_role = fetch_one_by_engine(user_roles_query, DbConnection.SIT, {"id_user": user.id_user})
-    utente_role = UserRoles(**utente_role) if utente_role else None
-    logger.info(f"Ruolo utenze per l'utente ID {user.id_user}: {utente_role.utenze if utente_role else 'Nessun ruolo utenze'}")
+    ######### Recupero i permessi associati all'utente per includerli nel token JWT, in modo da poterli utilizzare per l'autorizzazione a livello di endpoint. Se l'utente non ha permessi specifici, il token conterrà comunque un campo "permessi" vuoto, che potrà essere gestito dagli endpoint per negare l'accesso se necessario. #########
+    rows_utente_permission = fetch_list_by_engine(pst_user_roles(),
+                                                  DbConnection.CONFIG, 
+                                                  {"id_user": user.id})
+    #### Creo la lista di permessi a partire dalle righe restituite dalla query, estraendo il campo "permesso" da ogni riga. Se l'utente non ha permessi specifici, questa lista sarà vuota. #####
+    permessi = [row['permesso'] for row in rows_utente_permission]
     
-    utenze_param = {"utenze": utente_role.utenze if utente_role is not None and utente_role.utenze else False,
-                    "idea": utente_role.idea if utente_role is not None and utente_role.idea else False}
-    logger.info(f"utenze_param per l'utente ID {user.id_user}: {utenze_param}")
-    ################################################################################################################
+    logger.info(f"Permessi per l'utente ID {user.id}: {permessi if permessi else 'Nessun permesso specifico trovato'}")
+    
     try:
-        access_token = create_access_token(data={"sub": username, "user_id": user.id_user, "email": user.email, "role": user.role_name,**utenze_param})
+        access_token = create_access_token(data={"user_id": user.id, "sub": user.username , "permessi": permessi})
         logger.info(f"Utente {username} autenticato con successo.")
     except Exception as e:
         logger.error(f"Errore durante la creazione del token per l'utente {username}: {e}")
@@ -170,10 +165,11 @@ async def login(request: Request,
             headers={"WWW-Authenticate": "Bearer"},
         )
     return {"access_token": access_token, "token_type": "bearer"}
+################################################################## FINE API #########################################################################################################
 ###########################################################################################################################################################################
-
-
-############################################# Funzioni per la gestione dei log di sicurezza #######################################################################################################################################################################################################################
+####################################################################################################################################################
+####################################################################################################################################################
+############################################# FUNZIONI PER LA GESTIONE DEI LOG DI SICUREZZA #######################################################################################################################################################################################################################
 
 def get_client_ip(request: Request):
     # Prova a prendere l'IP passatoci dal Proxy
@@ -288,8 +284,6 @@ def register_access_log(ip: str):
 def register_access_log_user(user: str):
     """Aggiorna last_access e incrementa count_access dopo un login riuscito."""
     update_query_by_engine(update_access_log_user(), DbConnection.CONFIG, {"user": user})
-
-#######################################################################################################################################################################################################################
 
 
 

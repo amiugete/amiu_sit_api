@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Query, Depends, HTTPException, status
+from fastapi import APIRouter, Query, Depends, HTTPException, status,Request
 from typing import Any, List, Optional, Union
-from business.permission import get_current_user, verifica_permesso_utenze
+from business.permission import check_permissions, verifica_permessi_endpoint_utente
 from business.utility import get_total_count_from_rows
 
 from models.models import UtenzeDomestichePerCivico, UtenzeNonDomestichePerCivico,FasceEtaCivico, PaginatedResponse, MacroCategoria, Utenza
@@ -35,7 +35,8 @@ router = APIRouter(tags=["Utenze TARI Genova"])
 @router.get("/macro_categorie", description="""Recupera le macro categorie TARI delle utenze del Comune di Genova.
             Richiede autenticazione (Bearer Token).""")
 def macro_categorie(
-    payload: dict[str, Any] = Depends(get_current_user)
+    request: Request,
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /macro_categorie")
     query_select = prepared_statement_macro_categorie()
@@ -48,36 +49,21 @@ def macro_categorie(
     return listaMacroCategorie
 
 
-
-
-
-
-
-
 @router.get("/utenze_tari", response_model= PaginatedResponse[Utenza],
                         description="""Recupera la lista delle utenze tari con filtri opzionali .
                             Paginazione opzionale gestita tramite parametri page e size nella request.
                             Richiede autenticazione (Bearer Token).
                             Per motivi di privacy l'acceso è consentito solo agli utenti con permessi specifici per accedere a questo endpoint, altrimenti viene restituito un errore 403 Forbidden.""")
-def lista_utenze(
+def lista_utenze( 
+    request: Request,
     tipo: TipoUtenza = Query(..., description="Filtra per tipo di utenza (UD = Domestica o UND = Non Domestica)"),
-    payload: dict[str, Any] = Depends(get_current_user),
+    payload: dict[str, Any] = Depends(check_permissions),
     page: int = Query(..., ge=1, description="Numero della pagina"),
     size: int = Query(..., ge=1, le=1000, description="Dimensione della pagina")
 ):
     """Endpoint per recuperare la lista delle utenze con autenticazione."""
-    
-    # Verifica dei permessi dell'utente per accedere a questo endpoint prendendo le informazioni dal payload ottenuto con get_current_user
-    is_auth,msg = verifica_permesso_utenze(payload, "/utenze_tari")
-
-    if not is_auth:
-        logger.warning(f"Accesso non autorizzato all'endpoint /utenze_tari per l'utente ID {payload.get('user_id')}: {msg}")
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"{msg}"
-        )
-    
-    logger.info("Ricevuta richiesta GET /utenze_tari")
+ 
+    logger.info(f"Ricevuta richiesta GET {request.scope['route'].path}")
     lista_dict_utenze: List[dict] | Any = None
     list_utenze : List[Utenza] = []
     result: PaginatedResponse[Utenza] = PaginatedResponse[Utenza]()
@@ -132,8 +118,9 @@ def lista_utenze(
     Richiede autenticazione (Bearer Token)."""
 )
 def lista_utenze_civici(
+    request: Request,
     tipo: TipoUtenza = Query(..., description="Filtra per tipo di utenza (UD = Domestica o UND = Non Domestica)"),
-    payload: dict[str, Any] = Depends(get_current_user),
+    payload: dict[str, Any] = Depends(check_permissions),
     id_via: Optional[int] = Query(None, description="Filtra per via"),
     cod_civico: Optional[int] = Query(None, description="Filtra per civico"),
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
@@ -200,11 +187,12 @@ def lista_utenze_civici(
 
 @router.get("/civici/anagrafe/fasce_eta", response_model=Union[PaginatedResponse[FasceEtaCivico ], List[FasceEtaCivico]]  , description="Recupera la lista dei civici ragruppandoli per le fasce di età con filtri opzionali. Paginazione opzionale gestita tramite parametri page e size nella request. Richiede autenticazione (Bearer Token).")
 def lista_civici_fasce_eta(
+    request: Request,
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=1000, description="Dimensione della pagina"),
     id_via: Optional[int] = Query(None, description="Filtra per via"),
     cod_civico: Optional[int] = Query(None, description="Filtra per civico"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /civici/anagrafe/fasce_eta")
     listCivici: List[dict] | None

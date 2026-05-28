@@ -79,6 +79,24 @@ app.include_router(prefix="/bilaterale", router=bilaterale_router)
 app.include_router(prefix="/posteriori", router=tellus_router)
 app.include_router(prefix="/locate", router=localizzazione_router)
 
+# Mappa endpoint → path locale (senza prefisso del router), usata da check_permissions
+app.state.endpoint_local_paths = {
+    route.endpoint: route.path
+    for sub_router, prefix in [
+        (auth_router,          "/auth"),
+        (public_router,        ""),
+        (mobile_router,        "/mobile"),
+        (duale_router,         "/duale"),
+        (utenze_router,        "/utenze"),
+        (utenze_idea_router,   "/idea"),
+        (bilaterale_router,    "/bilaterale"),
+        (tellus_router,        "/posteriori"),
+        (localizzazione_router,"/locate"),
+    ]
+    for route in sub_router.routes
+    if hasattr(route, "endpoint")
+}
+
 
 
 

@@ -2,9 +2,9 @@
 
 
 
-from fastapi import APIRouter, Query, Depends, HTTPException, status
+from fastapi import APIRouter, Query, Depends, HTTPException, status, Request
 from typing import Any, List, Optional, Union
-from business.permission import get_current_user, verifica_permesso_utenze
+from business.permission import check_permissions, verifica_permessi_endpoint_utente
 from business.utility import get_total_count_from_rows
 from config.database import fetch_list_by_engine, DbConnection
 from models.models import UtenzaIdea, PaginatedResponse
@@ -41,15 +41,16 @@ router = APIRouter(tags=["Utenze TARI Genova per Id&A"])
                             Richiede autenticazione (Bearer Token).
                             Per motivi di privacy l'acceso è consentito solo agli utenti con permessi specifici per accedere a questo endpoint, altrimenti viene restituito un errore 403 Forbidden.""")
 def lista_utenze(
+    request: Request,
     tipo: TipoUtenza = Query(..., description="Filtra per tipo di utenza (UD = Domestica o UND = Non Domestica)"),
-    payload: dict[str, Any] = Depends(get_current_user),
+    payload: dict[str, Any] = Depends(check_permissions),
     page: int = Query(..., ge=1, description="Numero della pagina"),
     size: int = Query(..., ge=1, le=1000, description="Dimensione della pagina")
 ):
     """Endpoint per recuperare la lista delle utenze con autenticazione."""
     
     # Verifica dei permessi dell'utente per accedere a questo endpoint prendendo le informazioni dal payload ottenuto con get_current_user
-    is_auth,msg = verifica_permesso_utenze(payload, "/utenze_tari_idea")
+    is_auth,msg = verifica_permessi_endpoint_utente(payload, "/utenze_tari_idea")
 
     if not is_auth:
         logger.warning(f"Accesso non autorizzato all'endpoint /utenze_tari per l'utente ID {payload.get('user_id')}: {msg}")

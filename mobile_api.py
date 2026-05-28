@@ -1,6 +1,6 @@
 
-from fastapi import APIRouter, Query, HTTPException,Depends,Response,Body
-from business.permission import get_current_user
+from fastapi import APIRouter, Query, HTTPException, Depends, Response, Body, Request
+from business.permission import check_permissions
 from typing import Any, List, Optional
 from config.database import fetch_list_by_engine, update_query_by_engine, DbConnection
 from models.models import AstaMobile, ImmagineUploadFromSitMobile,PiazzolaMobile
@@ -23,7 +23,8 @@ router = APIRouter(tags=["Servizi mobile"])
 @router.post("/piazzola/upload/foto", description="Effettua un upload dell'immagine di una piazzola verifica se esiste e la crea o la sostituisce qualora esistesse. Richiede autenticazione (Bearer Token)."
 )
 def upload_foto_piazzola(
-    payload: dict[str, Any] = Depends(get_current_user), 
+    request: Request,
+    payload: dict[str, Any] = Depends(check_permissions), 
     imageBody: ImmagineUploadFromSitMobile = Body(..., description="Dati dell'immagine da caricare, inclusi il nome del file e il contenuto in base64")):
     """
     """
@@ -56,11 +57,12 @@ def upload_foto_piazzola(
             description="""Recupera la lista delle piazzole per l'applicazione mobile con filtri opzionali.
             Richiede autenticazione (Bearer Token).""", )
 def lista_piazzole(
+    request: Request,
     id_comune: Optional[int] = Query(None, description="Filtra per comune"),
     id_via: Optional[int] = Query(None, description="Filtra per ID della via"),
     last_update: Optional[str] = Query(None, description="Filtra per data di ultimo aggiornamento (formato YYYYMMDDHHMM)"),
     data_eliminazione: Optional[str] = Query(None, description="Filtra per data di eliminazione (formato YYYYMMDDHHMM)"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /piazzole")
     
@@ -84,9 +86,10 @@ def lista_piazzole(
             description="""Recupera la lista delle aste per l'applicazione mobile con filtri opzionali.
             Richiede autenticazione (Bearer Token).""", )
 def lista_aste(
+    request: Request,
     id_via: Optional[int] = Query(None, description="Filtra per ID della via"),
     data_ultima_modifica: Optional[str] = Query(None, description="Filtra per data di ultimo aggiornamento (formato YYYYMMDDHHmm)"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /aste")
     

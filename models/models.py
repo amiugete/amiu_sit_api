@@ -126,10 +126,8 @@ class PointOfInterest(BaseModel):
 
 
 class User(BaseModel):
-    id_user: int
-    name: str
-    role_name: str 
-    email: Optional[str] = None
+    id: int
+    username: str
     
 
 class Mappa(BaseModel):
@@ -453,6 +451,12 @@ class UserRoles(BaseModel):
                 if value:
                     roles.append(field)
         return roles
+    
+    
+class UserPermission(BaseModel):
+    id_user: Optional[int] = None
+    username: Optional[str] = None
+    permessi: list[str] = []
 
 
 class LayerFilterResponse(BaseModel):

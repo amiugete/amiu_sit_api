@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Query, Depends
+from fastapi import APIRouter, Query, Depends, Request
 from business.email.email_engine import send_email_territorio
-from business.permission import get_current_user
+from business.permission import check_permissions
 from typing import Any, List, Optional, Union
 import logging
 
@@ -45,7 +45,8 @@ router = APIRouter(tags=["Servizi generici"])
 @router.get("/ambiti", response_model=List[Ambito], 
             description="Recupera la lista degli ambiti territoriali AMIU (livello sovra-comunale). Richiede autenticazione (Bearer Token).")
 def lista_ambiti(
-    payload: dict[str, Any] = Depends(get_current_user)
+    request: Request,
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /ambiti")
     query_select = prepared_statement_ambiti()
@@ -61,9 +62,10 @@ def lista_ambiti(
 @router.get("/comuni", response_model=List[Comune],
          description="Recupera la lista dei comuni. Richiede autenticazione (Bearer Token).")
 def lista_comuni(
+    request: Request,
     id_ambito: Optional[int] = Query(None, description="Filtra per ambito"),
     cod_istat: Optional[str] = Query(None, description="Filtra per codice ISTAT"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     
     """Endpoint per recuperare la lista dei comuni"""
@@ -87,7 +89,8 @@ def lista_comuni(
 @router.get("/municipi", response_model=List[Municipio], 
             description="Recupera la lista dei municipi (per il solo Comune di Genova). Richiede autenticazione (Bearer Token).")
 def lista_municipi(
-    payload: dict[str, Any] = Depends(get_current_user)
+    request: Request,
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /municipi")
     query_select = prepared_statement_municipi_genova()
@@ -105,8 +108,9 @@ def lista_municipi(
 @router.get("/quartieri", response_model=List[Quartiere],
             description="Recupera la lista dei quartieri (per il solo Comune di Genova, fuori Genova quartiere = Comune). Richiede autenticazione (Bearer Token).")
 def lista_quartieri(
+    request: Request,
     id_municipio: Optional[int] = Query(None, description="Filtra per municipio"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /quartieri")
     params = {"id_municipio": id_municipio}
@@ -127,10 +131,11 @@ def lista_quartieri(
              Richiede autenticazione (Bearer Token).
              Paginazione opzionale gestita tramite parametri page e size nella request.""", )
 def lista_vie(
+    request: Request,
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
     id_comune: Optional[int] = Query(None, description="Filtra per comune"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /vie")
     listVie: CursorResult[Any]
@@ -188,12 +193,13 @@ def lista_vie(
         Paginazione opzionale gestita tramite parametri page e size nella request."""
 )
 def lista_aste(
+    request: Request,
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
     id_via: Optional[int] = Query(None, description="Filtra per ID via"),
     id_municipio: Optional[int] = Query(None, description="Filtra per ID municipio"),
     last_update: Optional[str] = Query(None, description="Filtra per data di ultima modifica (YYYYMMDD)"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /aste")
     offset = 0
@@ -251,12 +257,13 @@ def lista_aste(
             Richiede autenticazione (Bearer Token).
             Paginazione opzionale gestita tramite parametri page e size nella request.""")
 def lista_civici(
+    request: Request,
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
     id_municipio: Optional[int] = Query(None, description="Filtra per municipio"),
     id_via: Optional[int] = Query(None, description="Filtra per via"),
     last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /civici")
     listCivici: List[dict] | None
@@ -308,13 +315,14 @@ def lista_civici(
             Richiede autenticazione (Bearer Token).
             Paginazione opzionale gestita tramite parametri page e size nella request.""", )
 def lista_piazzole(
+    request: Request,
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
     id_comune: Optional[int] = Query(None, description="Filtra per comune"),
     id_municipio: Optional[int] = Query(None, description="Filtra per municipio"),
     id_via: Optional[int] = Query(None, description="Filtra per ID della via"),
     pap: Optional[int] = Query(None, ge=0, le=1, description="Filtra per PAP (1 = Sì, 0 = No)"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /piazzole")
     listPiazzole: CursorResult[Any]
@@ -368,6 +376,7 @@ def lista_piazzole(
             Richiede autenticazione (Bearer Token).
             Paginazione opzionale gestita tramite parametri page e size nella request.""")
 def lista_elementi(
+    request: Request,
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
     id_piazzola: Optional[int] = Query(None, description="Filtra per ID piazzola"),
@@ -376,7 +385,7 @@ def lista_elementi(
         description="Filtra per ultimo aggiornamento nel formato YYYYMMDDHHMM (es. 202603301230)",
         pattern=r"^(?:19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])([01]\d|2[0-3])([0-5]\d)$"
     ),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /elementi")
     listElementi: CursorResult[Any]
@@ -428,7 +437,8 @@ def lista_elementi(
             description="""Recupera i dettagli dei Punti di Interesse (Rimesse, UT e Scarichi vari). 
             Richiede autenticazione (Bearer Token).""")
 def lista_point_of_interest(
-        payload: dict[str, Any] = Depends(get_current_user)
+        request: Request,
+        payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /point of interest")
     query_select = prepared_statement_pointofinterest()

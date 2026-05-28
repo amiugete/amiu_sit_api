@@ -1,23 +1,26 @@
 
 
-def check_user_db(username: str) -> str:
+def pst_check_user_db() -> str:
     """Query per il controllo dell'esistenza di un utente nel sistema"""
-    return """SELECT u.id_user, u.name, u.email, sr.name AS role_name
-    FROM util_ns.sys_users u 
-    JOIN util_ns.sys_roles sr on sr.id_role= u.id_role
-    WHERE u.name ILIKE :name
+    return """
+    SELECT id, username FROM config.users where username = :username;
     """
 
-def get_lista_permessi_endpoint() -> str:
+def pst_endpoint_permissions() -> str:
     """Query per il recupero dei permessi associati ai ruoli per endpoint"""
     return """
-    select unnest(string_to_array(permessi, ',')) AS permesso
-    FROM util_ns.sys_ws
-    WHERE endpoint  = :endpoint
+        SELECT p.perm as permesso
+        FROM config.ws_permessi ws
+        inner join config.perm p on p.id = ws.id_perm  
+        where endpoint = :endpoint;
     """
 
-def get_user_roles() -> str:
+
+def pst_user_roles() -> str:
     """Query per il recupero dei ruoli associati a un utente"""
     return """
-           select * from util_ns.sys_users_ws  where id_user = :id_user
+            select up.id_user , u.username ,up.id_perm ,p.perm as permesso  from config.users_perm up
+            inner join config.users u on u.id = up.id_user 
+            inner join config.perm p  on p.id = up.id_perm
+            where up.id_user = :id_user
         """

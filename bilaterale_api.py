@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Query, Depends
+from fastapi import APIRouter, Query, Depends, Request
 from typing import Any, List, Optional
-from business.permission import get_current_user
+from business.permission import check_permissions
 from config.database import fetch_list_by_engine, DbConnection
 from business.utility import get_total_count_from_rows
 import logging
@@ -32,7 +32,8 @@ router = APIRouter(tags=["API Percorsi Bilaterali (ID&A)"])
 @router.get("/elenco_percorsi_bilaterali_tree", response_model=List[Bilaterali_albero],
             description="Recupera la lista dei percorsi bilaterali ad albero. Richiede autenticazione (Bearer Token).")
 def elenco_percorsi_bilaterali_tree(
-    payload: dict[str, Any] = Depends(get_current_user)
+    request: Request,
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     """Endpoint per recuperare la lista dei percorsi bilaterali ad albero con autenticazione."""
     
@@ -53,7 +54,8 @@ def elenco_percorsi_bilaterali_tree(
 @router.get("/elenco_percorsi_bilaterali",
             response_model=List[Bilaterali], description="Recupera la lista dei percorsi bilaterali. Richiede autenticazione (Bearer Token).")
 def elenco_percorsi_bilaterali(
-    payload: dict[str, Any] = Depends(get_current_user)
+    request: Request,
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     """Endpoint per recuperare la lista dei percorsi bilaterali con autenticazione."""
       
@@ -76,8 +78,9 @@ def elenco_percorsi_bilaterali(
 @router.get("/dettagli_percorso", response_model=List[PercorsoDettaglio], 
             description="Recupera il dettaglio dei percorsi bilaterali. Richiede autenticazione (Bearer Token).")
 def dettagli_percorso(
+    request: Request,
     id: Optional[str] = Query(..., description="ID del percorso per filtrare i percorsi bilaterali"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     """Endpoint per recuperare i dettagli del percorso con autenticazione."""
     

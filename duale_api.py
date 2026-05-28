@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Query, Depends, HTTPException
+from fastapi import APIRouter, Query, Depends, HTTPException, Request
 from typing import Any, List
-from business.permission import get_current_user
+from business.permission import check_permissions
 import logging
 from enum import Enum
 
@@ -27,7 +27,8 @@ router = APIRouter(tags=["Servizi per il portale Duale"])
 
 @router.get("/mappe", description="Recupera le mappe disponibili. Richiede autenticazione (Bearer Token).")
 def mappe(
-    payload: dict[str, Any] = Depends(get_current_user)
+    request: Request,
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /mappe")
     query_select = prepared_statement_mappe()
@@ -53,10 +54,11 @@ class LivelloFiltro(str, Enum):
     description="Recupera i layer filtrati in base a titolo mappa, livello e nome. Richiede autenticazione (Bearer Token)."
 )
 def get_layer_filter(
+    request: Request,
     t: str = Query(..., description="Titolo della mappa"), 
     l: LivelloFiltro = Query(..., description="Livello del filtro"),
     n: str = Query(..., description="Nome da usare nel filtro"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info(f"Ricevuta richiesta GET /layer_filter con t={t}, l={l.value}, n={n}")
     

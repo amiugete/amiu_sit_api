@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Query,Depends
-from business.permission import get_current_user
+from fastapi import APIRouter, Query, Depends, Request
+from business.permission import check_permissions
 from typing import Any, List, Optional, Union
 from business.utility import get_total_count_from_rows
 from config.database import fetch_list_by_engine, DbConnection
@@ -34,10 +34,11 @@ router = APIRouter(tags=["API Percorsi Posteriori (Tellus)"])
     description="Restituisce la lista delle piazzole amiu. Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD). Richiede autenticazione (Bearer Token)."
 )
 def lista_piazzole_amiu(
+    request: Request,
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
     last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /piazzole_amiu")
     piazzole_row: List[dict] | None
@@ -85,10 +86,11 @@ def lista_piazzole_amiu(
     Richiede autenticazione (Bearer Token)."""
 )
 def lista_elementi_p(
+    request: Request,
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
     last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /elementi_p")
     elementi_row: List[dict] | None
@@ -138,10 +140,11 @@ def lista_elementi_p(
     Richiede autenticazione (Bearer Token)."""
 )
 def lista_percorsi_p(
+    request: Request,
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
     last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /percorsi_p")
     listPercorsi_row: List[dict] | None
@@ -186,10 +189,11 @@ def lista_percorsi_p(
     È possibile filtrare anche per data di ultimo aggiornamento (formato YYYYMMDD). Richiede autenticazione (Bearer Token)."""
 )
 def lista_itinerari_p(
+    request: Request,
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
     last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /itinerari_p")
     itinerari_row: List[dict] | None
@@ -231,10 +235,11 @@ def lista_itinerari_p(
     description="Restituisce la lista dei mezzi ekovision. Permette filtri opzionali e supporta la paginazione tramite i parametri 'page' e 'size'. È possibile filtrare anche per data di esecuzione prevista (formato YYYYMMDD). Richiede autenticazione (Bearer Token)."
 )
 def lista_mezzi_ekovision(
+    request: Request,
     check_date: str = Query(..., description="Filtra per data di esecuzione prevista in formato YYYYMMDD",pattern=r"^\d{8}$"),
     page:  Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /mezzi_ekovision")
     mezzi_row: List[dict] | None
@@ -276,10 +281,11 @@ def lista_mezzi_ekovision(
     description="Restituisce la lista delle Unità Territoriali e delle Rimesse. Supporta la paginazione e il filtro per data di ultimo aggiornamento. Richiede autenticazione (Bearer Token)."
 )
 def lista_depositi(
+    request: Request,
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
     last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD", pattern=r"^\d{8}$"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
     logger.info("Ricevuta richiesta GET /depositi")
     offset = 0
