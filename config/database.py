@@ -63,25 +63,25 @@ DATABASE_URL_STRADE = f"oracle+oracledb://{user_oracle}:{password_oracle}@{host_
 ################################                  ##########################
 engine = create_engine(
      DATABASE_URL,
-     echo=True,
+     echo=False,
      pool_pre_ping=True,  # Verifica la connessione prima di usarla
      pool_recycle=900    # Ricicla le connessioni ogni 15 minuti
 )
 engine_config = create_engine(
      DATABASE_URL_CONFIG,
-     echo=True,
+     echo=False,
      pool_pre_ping=True, # Verifica la connessione prima di usarla
      pool_recycle=900 # Ricicla le connessioni ogni 15 minuti
 )
 engine_mappe = create_engine(
      DATABASE_URL_MAPPE,
-     echo=True,
+     echo=False,
      pool_pre_ping=True, # Verifica la connessione prima di usarla
      pool_recycle=900 # Ricicla le connessioni ogni 15 minuti
 )
 engine_oracle = create_engine(
      DATABASE_URL_STRADE,
-     echo=True
+     echo=False
 )
 ####################################################################################
 ####################################################################################

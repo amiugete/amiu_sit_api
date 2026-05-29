@@ -3,7 +3,6 @@ from business.permission import check_permissions
 from business.query_helpers import execute_paginated_query
 from business.query_helpers import execute_simple_query
 from typing import Any, List, Optional, Union
-from business.utility import get_route_path_from_request
 from config.database import DbConnection
 from models.models import  Deposito, ElementoAmiu,MezzoEkovision, ItinerarioPercorsoPsteriore, PaginatedResponse, PiazzolaAmiu, PosterioriPercorso
 from repository.depositi_repo import pst_depositi
@@ -42,16 +41,13 @@ def lista_piazzole_amiu(
     last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /piazzole_amiu")
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")   
     return execute_paginated_query(
+        request,
         pst_piazzole_amiu, PiazzolaAmiu, 
         DbConnection.SIT,
         {"last_update": last_update},
         page,
         size,
-        endpoint,
         default_limit=10000,
         query_with_count=None
     )
@@ -73,14 +69,12 @@ def lista_elementi_p(
     last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
     return execute_paginated_query(
+        request,
         pst_elementi_amiu, ElementoAmiu, DbConnection.SIT,
         {"last_update": last_update}, 
         page,
         size,
-        endpoint,
         default_limit=10000,
         query_with_count=None
     )
@@ -103,14 +97,12 @@ def lista_percorsi_p(
     last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
     return execute_paginated_query(
+        request,
         pst_posteriori, PosterioriPercorso, DbConnection.SIT,
         {"last_update": last_update}, 
         page, 
         size,
-        endpoint,
         default_limit=10000,
         query_with_count=None
     )
@@ -131,13 +123,11 @@ def lista_itinerari_p(
     last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD",pattern=r"^\d{8}$"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
     return execute_paginated_query(
+        request,
         pst_percorsi_posteriori_aggiornata, ItinerarioPercorsoPsteriore, DbConnection.SIT,
         {"last_update": last_update}, page,
         size,
-        endpoint,
         default_limit=10000,
         query_with_count=None
     )
@@ -154,14 +144,12 @@ def lista_mezzi_ekovision(
     size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint} ")
     return execute_paginated_query(
+        request,
         pst_mezzi_ekovision, MezzoEkovision, DbConnection.SIT,
         {"check_date": check_date}, 
         page,
         size,
-        endpoint,
         default_limit=1000,
         query_with_count=None
     )
@@ -179,14 +167,12 @@ def lista_depositi(
     last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD", pattern=r"^\d{8}$"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
     return execute_paginated_query(
+        request,
         pst_depositi, Deposito, DbConnection.SIT,
         {"last_update": last_update},
         page,
         size,
-        endpoint,
         default_limit=10000,
         query_with_count=None
     )

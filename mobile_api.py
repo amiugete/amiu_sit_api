@@ -1,7 +1,6 @@
 
 from fastapi import APIRouter, Query, HTTPException, Depends, Response, Body, Request
 from business.permission import check_permissions
-from business.utility import get_route_path_from_request
 from business.query_helpers import execute_simple_query
 from typing import Any, List, Optional
 from config.database import DbConnection, update_query_by_engine
@@ -66,14 +65,13 @@ def lista_piazzole(
     data_eliminazione: Optional[str] = Query(None, description="Filtra per data di eliminazione (formato YYYYMMDDHHMM)"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint} ")
     query = pst_piazzole_mobile_all_date if last_update is not None and data_eliminazione is not None else pst_piazzole_mobile
     return execute_simple_query(
-        query, PiazzolaMobile, DbConnection.SIT,
+        request,
+        query,
+        PiazzolaMobile,
+        DbConnection.SIT,
         {"via": id_via, "comune": id_comune, "last_update": last_update, "data_eliminazione": data_eliminazione},
-        endpoint
     )
 
 
@@ -87,13 +85,11 @@ def lista_aste(
     data_ultima_modifica: Optional[str] = Query(None, description="Filtra per data di ultimo aggiornamento (formato YYYYMMDDHHmm)"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
     return execute_simple_query(
+        request,
         pst_aste_mobile,
         AstaMobile,
         DbConnection.SIT,
         {"id_via": id_via, "data_ultima_modifica": data_ultima_modifica},
-        endpoint
     )
 

@@ -2,7 +2,6 @@ from fastapi import APIRouter, Query, HTTPException, Depends, Request
 from business.permission import check_permissions
 from business.query_helpers import execute_simple_query
 from typing import Any, List
-from business.utility import get_route_path_from_request
 from config.database import DbConnection
 from models.models import Point2Area
 from repository.localizzazione_repo import pst_point2area
@@ -26,10 +25,7 @@ def get_area_from_point(
     """
     Dato un punto geografico (lat, lon), restituisce le informazioni sull'area geografica di appartenenza.
     """
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint} con lat={lat}, lon={lon}")
-    result_list = execute_simple_query(pst_point2area, Point2Area, DbConnection.SIT, {"lat": lat, "lon": lon}, endpoint)
+    result_list = execute_simple_query(request, pst_point2area, Point2Area, DbConnection.SIT, {"lat": lat, "lon": lon})
     if not result_list:
-        logger.info(f"Nessuna area trovata per le coordinate fornite in {endpoint} con lat={lat}, lon={lon}")
         raise HTTPException(status_code=404, detail="Nessuna area trovata per le coordinate fornite.")
     return result_list

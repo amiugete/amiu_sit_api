@@ -2,7 +2,6 @@ from fastapi import APIRouter, Query, Depends, Request
 from typing import Any, List, Optional
 from business.permission import check_permissions
 from business.query_helpers import execute_simple_query
-from business.utility import get_route_path_from_request
 from config.database import DbConnection
 import logging
 
@@ -35,9 +34,7 @@ def elenco_percorsi_bilaterali_tree(
     payload: dict[str, Any] = Depends(check_permissions)
 ):
     """Endpoint per recuperare la lista dei percorsi bilaterali ad albero con autenticazione."""
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
-    return execute_simple_query(pst_bilaterali_albero, Bilaterali_albero, DbConnection.SIT, {}, endpoint)
+    return execute_simple_query(request, pst_bilaterali_albero, Bilaterali_albero, DbConnection.SIT, {})
 
 
 @router.get("/elenco_percorsi_bilaterali",
@@ -47,9 +44,7 @@ def elenco_percorsi_bilaterali(
     payload: dict[str, Any] = Depends(check_permissions)
 ):
     """Endpoint per recuperare la lista dei percorsi bilaterali con autenticazione."""
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
-    return execute_simple_query(pst_bilaterali, Bilaterali, DbConnection.SIT, {}, endpoint)
+    return execute_simple_query(request, pst_bilaterali, Bilaterali, DbConnection.SIT, {})
 
 
 
@@ -62,7 +57,5 @@ def dettagli_percorso(
     payload: dict[str, Any] = Depends(check_permissions)
 ):
     """Endpoint per recuperare i dettagli del percorso con autenticazione."""
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
-    return execute_simple_query(pst_percorso_dettaglio, PercorsoDettaglio, DbConnection.SIT, {"id": id}, endpoint)
+    return execute_simple_query(request, pst_percorso_dettaglio, PercorsoDettaglio, DbConnection.SIT, {"id": id})
 

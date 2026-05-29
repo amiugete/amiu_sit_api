@@ -3,7 +3,6 @@ from typing import Any, List, Optional, Union
 from business.permission import check_permissions
 from business.query_helpers import execute_simple_query, execute_paginated_query
 
-from business.utility import get_route_path_from_request
 from models.models import UtenzeDomestichePerCivico, UtenzeNonDomestichePerCivico,FasceEtaCivico, PaginatedResponse, MacroCategoria, Utenza
 import logging
 from enum import Enum
@@ -40,9 +39,7 @@ def macro_categorie(
     request: Request,
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
-    return execute_simple_query(pst_macro_categorie, MacroCategoria, DbConnection.STRADE, {}, endpoint)
+    return execute_simple_query(request, pst_macro_categorie, MacroCategoria, DbConnection.STRADE, {})
 
 
 @router.get("/utenze_tari", response_model= PaginatedResponse[Utenza],
@@ -58,17 +55,14 @@ def lista_utenze(
     size: int = Query(..., ge=1, le=1000, description="Dimensione della pagina")
 ):
     """Endpoint per recuperare la lista delle utenze con autenticazione."""
-    
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
     query = pst_utenze_UD_with_count if tipo == TipoUtenza.UD else pst_utenze_UND_with_count
-    return execute_paginated_query(query,
+    return execute_paginated_query(request,
+                                   query,
                                    Utenza,
                                    DbConnection.SIT, 
                                    {},
                                    page,
                                    size,
-                                   endpoint,
                                    default_limit=10000,
                                    query_with_count=None
                                    )
@@ -91,8 +85,6 @@ def lista_utenze_civici(
     size: Optional[int] = Query(None, ge=1, le=1000, description="Dimensione della pagina")
 ):
     """Endpoint per recuperare la lista delle utenze con autenticazione."""
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
 
     lista_dict_utenze: List[dict] | Any = None
     result: PaginatedResponse[Any] = PaginatedResponse[Any]()
@@ -125,7 +117,7 @@ def lista_utenze_civici(
                                                                   "cod_civico": cod_civico})
 
     if lista_dict_utenze is None or len(lista_dict_utenze) == 0:
-        logger.info(f"Nessun risultato ottenuto dalla query per endpoint {endpoint}.")
+        logger.info(f"Nessun risultato ottenuto dalla query per endpoint {request.url.path}.")
         result.content = []
         result.total = 0
         result.page = page
@@ -142,8 +134,8 @@ def lista_utenze_civici(
     result.page = page
     result.size = size
     result.pages = (result.total + size - 1) // size if size else 0
-    logger.info(f"Restituite {result.total} utenze per endpoint {endpoint}.")
-    logger.info(f"Restituite {len(list_utenze)} utenze per endpoint {endpoint}.")
+    logger.info(f"Restituite {result.total} utenze per endpoint {request.url.path}.")
+    logger.info(f"Restituite {len(list_utenze)} utenze per endpoint {request.url.path}.")
 
     return result
     
@@ -159,15 +151,12 @@ def lista_civici_fasce_eta(
     cod_civico: Optional[int] = Query(None, description="Filtra per civico"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /civici/anagrafe/fasce_eta")
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
     return execute_paginated_query(
+        request,
         pst_fasce_eta, FasceEtaCivico, DbConnection.STRADE,
         {"id_via": id_via, "cod_civico": cod_civico},
         page, 
         size,
-        endpoint,
         default_limit=10000,
         query_with_count=pst_fasce_eta_with_count
     )

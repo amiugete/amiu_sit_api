@@ -6,9 +6,6 @@ import logging
 # helpers
 from business.query_helpers import execute_simple_query, execute_paginated_query
 
-#utility
-from business.utility import get_route_path_from_request
-
 # database
 from config.database import fetch_list_by_engine, DbConnection
 
@@ -51,9 +48,7 @@ def lista_ambiti(
     request: Request,
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
-    return execute_simple_query(pst_ambiti, Ambito, DbConnection.SIT, {}, endpoint)
+    return execute_simple_query(request, pst_ambiti, Ambito, DbConnection.SIT, {})
 
 ##############################################################
 @router.get("/comuni", response_model=List[Comune],
@@ -64,14 +59,12 @@ def lista_comuni(
     cod_istat: Optional[str] = Query(None, description="Filtra per codice ISTAT"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
     return execute_simple_query(
+        request,
         pst_comuni,
         Comune, 
         DbConnection.SIT,
         {"id_ambito": id_ambito, "cod_istat": cod_istat},
-        endpoint
     )
 
 
@@ -83,9 +76,7 @@ def lista_municipi(
     request: Request,
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
-    return execute_simple_query(pst_municipi_genova, Municipio, DbConnection.SIT, {}, endpoint)
+    return execute_simple_query(request, pst_municipi_genova, Municipio, DbConnection.SIT, {})
 
 
 
@@ -97,12 +88,10 @@ def lista_quartieri(
     id_municipio: Optional[int] = Query(None, description="Filtra per municipio"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
     return execute_simple_query(
+        request,
         pst_quartieri, Quartiere, DbConnection.SIT,
         {"id_municipio": id_municipio},
-        endpoint
     )
 
 
@@ -119,15 +108,13 @@ def lista_vie(
     id_comune: Optional[int] = Query(None, description="Filtra per comune"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
     return execute_paginated_query(
+        request,
         pst_vie,
         Via, DbConnection.SIT,
         {"comune": id_comune},
         page,
         size,
-        endpoint,
         default_limit=10000,
         query_with_count = None
     )
@@ -154,7 +141,6 @@ def lista_aste(
     last_update: Optional[str] = Query(None, description="Filtra per data di ultima modifica (YYYYMMDD)"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info(f"Ricevuta richiesta GET {get_route_path_from_request(request)}")
     offset = 0
     limit = 1000
 
@@ -218,15 +204,13 @@ def lista_civici(
     last_update: Optional[str] = Query(None, description="Filtra per ultimo aggiornamento in formato YYYYMMDD", pattern=r"^\d{8}$"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
     return execute_paginated_query(
+        request,
         pst_civici,
         Civico, DbConnection.SIT,
         {"id_municipio": id_municipio, "id_via": id_via, "ins_date": last_update},
         page,
         size, 
-        endpoint,
         default_limit=10000,
         query_with_count=None
     )
@@ -248,16 +232,14 @@ def lista_piazzole(
     pap: Optional[int] = Query(None, ge=0, le=1, description="Filtra per PAP (1 = Sì, 0 = No)"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
     return execute_paginated_query(
+        request,
         pst_piazzole,
         Piazzola,
         DbConnection.SIT,
         {"pap": pap if pap is not None else 0, "via": id_via, "comune": id_comune, "municipio": id_municipio},
         page, 
         size,
-        endpoint,
         default_limit=10000,
         query_with_count=None
     )
@@ -279,15 +261,14 @@ def lista_elementi(
     ),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
     return execute_paginated_query(
+        request,
         pst_elementi,
-        Elemento, DbConnection.SIT,
+        Elemento, 
+        DbConnection.SIT,
         {"id_piazzola": id_piazzola, "last_update": last_update},
         page,
         size,
-        endpoint,
         default_limit=10000,
         query_with_count=None
     )
@@ -299,9 +280,7 @@ def lista_point_of_interest(
     request: Request,
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
-    return execute_simple_query(pst_pointofinterest, PointOfInterest, DbConnection.SIT, {}, endpoint)
+    return execute_simple_query(request, pst_pointofinterest, PointOfInterest, DbConnection.SIT, {})
 
 
 

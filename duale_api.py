@@ -6,7 +6,6 @@ import logging
 from enum import Enum
 
 # database
-from business.utility import get_route_path_from_request
 from config.database import fetch_list_by_engine, DbConnection
 
 # models
@@ -32,9 +31,7 @@ def mappe(
     request: Request,
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint}")
-    return execute_simple_query(pst_mappe, Mappa, DbConnection.MAPPE, {}, endpoint)
+    return execute_simple_query(request, pst_mappe, Mappa, DbConnection.MAPPE, {})
     
 
 
@@ -56,9 +53,6 @@ def get_layer_filter(
     n: str = Query(..., description="Nome da usare nel filtro"),
     payload: dict[str, Any] = Depends(check_permissions)
 ):
-    endpoint = get_route_path_from_request(request)
-    logger.info(f"Ricevuta richiesta GET {endpoint} con t={t}, l={l.value}, n={n}")
-    
     try:
         query = get_layer_filter_query(level=l.value)
     except ValueError as e:
@@ -71,7 +65,7 @@ def get_layer_filter(
     layer_rows = fetch_list_by_engine(query, DbConnection.SIT, params)
     
     if layer_rows is None or len(layer_rows) == 0:
-        logger.info(f"Nessun risultato ottenuto dalla query per {endpoint} con parametri t={t}, l={l.value}, n={n}")
+        logger.info(f"Nessun risultato ottenuto dalla query per {request.url.path} con parametri t={t}, l={l.value}, n={n}")
         return []
 
     result_list = [LayerFilterResponse(**row) for row in layer_rows]
