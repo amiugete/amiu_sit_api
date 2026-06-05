@@ -62,9 +62,7 @@ def lista_utenze(
                                    DbConnection.SIT, 
                                    {},
                                    page,
-                                   size,
-                                   default_limit=10000,
-                                   query_with_count=None
+                                   size
                                    )
 
 @router.get(
@@ -153,12 +151,12 @@ def lista_civici_fasce_eta(
 ):
     return execute_paginated_query(
         request,
-        pst_fasce_eta, FasceEtaCivico, DbConnection.STRADE,
+        pst_fasce_eta_with_count, 
+        FasceEtaCivico,
+        DbConnection.STRADE,
         {"id_via": id_via, "cod_civico": cod_civico},
         page, 
-        size,
-        default_limit=10000,
-        query_with_count=pst_fasce_eta_with_count
+        size
     )
 
 

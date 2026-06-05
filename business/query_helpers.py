@@ -7,13 +7,15 @@ Fornisce due funzioni riutilizzabili in tutti i router:
 import logging
 from typing import List, Optional, Type, TypeVar, Union
 
-from fastapi import Request
+from fastapi import HTTPException, Request
 
 from business.utility import get_route_path_from_request, get_total_count_from_rows
 from config.database import DbConnection, fetch_list_by_engine
 from models.models import PaginatedResponse
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_QUERY_LIMIT = 10000
 
 _T = TypeVar("_T")
 
@@ -53,14 +55,15 @@ def execute_paginated_query(
     params: dict,
     page: Optional[int],
     size: Optional[int],
-    default_limit: Optional[int] = None,
+    default_limit: Optional[int] = DEFAULT_QUERY_LIMIT,
     query_with_count: Optional[str] = None,
-) -> Union[List, PaginatedResponse]:
+) -> PaginatedResponse:
     """Esegue una query con supporto opzionale di paginazione.
 
     Se page e size sono valorizzati usa query_with_count (che deve includere
     la colonna total_count) e restituisce un PaginatedResponse; altrimenti
-    usa query e restituisce una lista semplice.
+    usa query e restituisce comunque un PaginatedResponse con i metadati della
+    prima pagina.
 
     Args:
         query: prepared statement senza conteggio totale.
@@ -75,8 +78,16 @@ def execute_paginated_query(
         default_limit: limite di righe per il caso non paginato; necessario
             quando la query SQL contiene :limit/:offset (es. query Tellus).
             Se None, la query viene chiamata senza aggiungere limit/offset.
+            Valore predefinito: 10000.
     """
     endpoint = get_route_path_from_request(request)
+    
+    
+    if (page is None or size is None) and query_with_count is not None:
+        raise HTTPException(
+            status_code=500,
+            detail="Parametri di paginazione mancanti: sia page che size devono essere forniti quando query_with_count è specificata.",
+        )
 
     if page is not None and size is not None and size > 0:
         offset = (page - 1) * size
@@ -86,7 +97,7 @@ def execute_paginated_query(
             rows = fetch_list_by_engine(query, db_conn, {**params, "limit": size, "offset": offset})
             if not rows:
                 logger.info(f"[{endpoint}] Nessun risultato (paginato).")
-                return []
+                return PaginatedResponse(total=0, content=[], page=page, size=size, pages=0)
             total = get_total_count_from_rows(rows)
         else:
             # query_with_count è una query separata che restituisce un semplice COUNT(*)
@@ -94,11 +105,11 @@ def execute_paginated_query(
             total = list(count_rows[0].values())[0] if count_rows else 0
             if total == 0:
                 logger.info(f"[{endpoint}] Nessun risultato (paginato).")
-                return []
+                return PaginatedResponse(total=0, content=[], page=page, size=size, pages=0)
             rows = fetch_list_by_engine(query, db_conn, {**params, "limit": size, "offset": offset})
             if not rows:
                 logger.info(f"[{endpoint}] Nessun risultato (paginato).")
-                return []
+                return PaginatedResponse(total=0, content=[], page=page, size=size, pages=0)
 
         items = [model_class(**row) for row in rows]
         logger.info(f"[{endpoint}] Restituiti {total} elementi (paginati).")
@@ -114,7 +125,14 @@ def execute_paginated_query(
         rows = fetch_list_by_engine(query, db_conn, {**params, **extra})
         if not rows:
             logger.info(f"[{endpoint}] Nessun risultato.")
-            return []
+            return PaginatedResponse(total=0, content=[], page=1, size=0, pages=0)
         items = [model_class(**row) for row in rows]
-        logger.info(f"[{endpoint}] Restituiti {len(items)} elementi.")
-        return items
+        total = len(items)
+        logger.info(f"[{endpoint}] Restituiti {total} elementi.")
+        return PaginatedResponse(
+            total=total,
+            content=items,
+            page=1,
+            size=total,
+            pages=1 if total > 0 else 0,
+        )

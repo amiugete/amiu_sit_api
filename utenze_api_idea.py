@@ -53,9 +53,13 @@ def lista_utenze(
     logger.info(f"Ricevuta richiesta GET {endpoint}")
 
     query = pst_utenze_UD_idea_with_count if tipo == TipoUtenza.UD else pst_utenze_UND_idea_with_count
-    return execute_paginated_query(query, UtenzaIdea, DbConnection.SIT, {},
+    return execute_paginated_query(
+                                   request,
+                                   query,
+                                   UtenzaIdea,
+                                   DbConnection.SIT,
+                                   {},
                                    page,
-                                   size, 
-                                   endpoint, 
-                                   default_limit=10000, 
-                                   query_with_count=None)
+                                   size
+                                   )
+

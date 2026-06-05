@@ -111,12 +111,11 @@ def lista_vie(
     return execute_paginated_query(
         request,
         pst_vie,
-        Via, DbConnection.SIT,
+        Via,
+        DbConnection.SIT,
         {"comune": id_comune},
         page,
-        size,
-        default_limit=10000,
-        query_with_count = None
+        size
     )
 
 
@@ -210,9 +209,7 @@ def lista_civici(
         Civico, DbConnection.SIT,
         {"id_municipio": id_municipio, "id_via": id_via, "ins_date": last_update},
         page,
-        size, 
-        default_limit=10000,
-        query_with_count=None
+        size
     )
 
 
@@ -239,9 +236,7 @@ def lista_piazzole(
         DbConnection.SIT,
         {"pap": pap if pap is not None else 0, "via": id_via, "comune": id_comune, "municipio": id_municipio},
         page, 
-        size,
-        default_limit=10000,
-        query_with_count=None
+        size
     )
 
 
@@ -268,9 +263,7 @@ def lista_elementi(
         DbConnection.SIT,
         {"id_piazzola": id_piazzola, "last_update": last_update},
         page,
-        size,
-        default_limit=10000,
-        query_with_count=None
+        size
     )
 
 @router.get("/POI", response_model=List[PointOfInterest],

@@ -7,7 +7,7 @@ from config.database import DbConnection
 from models.models import  Deposito, ElementoAmiu,MezzoEkovision, ItinerarioPercorsoPsteriore, PaginatedResponse, PiazzolaAmiu, PosterioriPercorso
 from repository.depositi_repo import pst_depositi
 from repository.elementi_amiu_repo import pst_elementi_amiu
-from repository.itinerari_percorsi_posteriori import pst_percorsi_posteriori_aggiornata
+from repository.itinerari_percorsi_posteriori import pst_percorsi_posteriori
 from repository.piazzole_amiu_repo import pst_piazzole_amiu
 from repository.posteriori_repo import pst_posteriori
 from repository.mezzi_ekovision_repo import pst_mezzi_ekovision
@@ -43,13 +43,12 @@ def lista_piazzole_amiu(
 ):
     return execute_paginated_query(
         request,
-        pst_piazzole_amiu, PiazzolaAmiu, 
+        pst_piazzole_amiu,
+        PiazzolaAmiu, 
         DbConnection.SIT,
         {"last_update": last_update},
         page,
-        size,
-        default_limit=10000,
-        query_with_count=None
+        size
     )
 
 
@@ -71,12 +70,12 @@ def lista_elementi_p(
 ):
     return execute_paginated_query(
         request,
-        pst_elementi_amiu, ElementoAmiu, DbConnection.SIT,
+        pst_elementi_amiu, 
+        ElementoAmiu,
+        DbConnection.SIT,
         {"last_update": last_update}, 
         page,
-        size,
-        default_limit=10000,
-        query_with_count=None
+        size
     )
 
 
@@ -99,12 +98,12 @@ def lista_percorsi_p(
 ):
     return execute_paginated_query(
         request,
-        pst_posteriori, PosterioriPercorso, DbConnection.SIT,
+        pst_posteriori,
+        PosterioriPercorso,
+        DbConnection.SIT,
         {"last_update": last_update}, 
         page, 
-        size,
-        default_limit=10000,
-        query_with_count=None
+        size
     )
 
 
@@ -125,11 +124,12 @@ def lista_itinerari_p(
 ):
     return execute_paginated_query(
         request,
-        pst_percorsi_posteriori_aggiornata, ItinerarioPercorsoPsteriore, DbConnection.SIT,
-        {"last_update": last_update}, page,
-        size,
-        default_limit=10000,
-        query_with_count=None
+        pst_percorsi_posteriori, 
+        ItinerarioPercorsoPsteriore, 
+        DbConnection.SIT,
+        {"last_update": last_update},
+        page,
+        size
     )
 
 @router.get(
@@ -146,12 +146,12 @@ def lista_mezzi_ekovision(
 ):
     return execute_paginated_query(
         request,
-        pst_mezzi_ekovision, MezzoEkovision, DbConnection.SIT,
+        pst_mezzi_ekovision, 
+        MezzoEkovision,
+        DbConnection.SIT,
         {"check_date": check_date}, 
         page,
-        size,
-        default_limit=1000,
-        query_with_count=None
+        size
     )
 
 
@@ -169,11 +169,11 @@ def lista_depositi(
 ):
     return execute_paginated_query(
         request,
-        pst_depositi, Deposito, DbConnection.SIT,
+        pst_depositi,
+        Deposito,
+        DbConnection.SIT,
         {"last_update": last_update},
         page,
-        size,
-        default_limit=10000,
-        query_with_count=None
+        size
     )
 
