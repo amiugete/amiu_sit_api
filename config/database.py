@@ -50,7 +50,8 @@ DATABASE_URL_MAPPE = f"postgresql+psycopg2://{user_mappe}:{password_mappe}@{host
 DATABASE_URL_STRADE = f"oracle+oracledb://{user_oracle}:{password_oracle}@{host_oracle}:{port_oracle}/{db_name_oracle}"
 
 # Singleton SQLAlchemy engines per database.
-engine = create_engine(
+# Una istanza per ogni database di connessione che viene selezionata con esposizione dell'enum per un controllo più ad alto livello
+engine_sit = create_engine(
     DATABASE_URL,
     echo=False,
     pool_pre_ping=True,  # Controlla la connessione prima di usarla.
@@ -76,6 +77,10 @@ engine_oracle = create_engine(
 # Logger del modulo.
 logger = logging.getLogger(__name__)
 
+# NOTA BENE: Se è necessario aggiungere una nuova connessione ricordarsi di creare nuovo engine
+# e aggiungere rispettivamente voce enum in class DbConnection(Enum) e in _ENGINE_MAP es :->
+# nuovo_engine ->  DbConnection.NUOVO: lambda: engine_nuovo
+# Enum per la selezione dell'engine / connessione 
 class DbConnection(Enum):
     SIT = "SIT"
     CONFIG = "CONFIG"
@@ -84,7 +89,7 @@ class DbConnection(Enum):
 
 # Mappa enum -> engine. Usata per selezionare dinamicamente l'engine corretto.
 _ENGINE_MAP = {
-    DbConnection.SIT: lambda: engine,
+    DbConnection.SIT: lambda: engine_sit,
     DbConnection.CONFIG: lambda: engine_config,
     DbConnection.MAPPE: lambda: engine_mappe,
     DbConnection.STRADE: lambda: engine_oracle,
