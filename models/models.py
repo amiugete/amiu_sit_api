@@ -479,4 +479,3 @@ class ImmagineUploadFromSitMobile(BaseModel):
     id_piazzola: int
     image: str
 
-

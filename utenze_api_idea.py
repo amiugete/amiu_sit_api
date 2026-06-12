@@ -29,7 +29,7 @@ class TipoUtenza(str, Enum):
 logger = logging.getLogger(__name__)
 
 
-router = APIRouter(tags=["Utenze TARI Genova per Id&A"])
+router = APIRouter()
 
 
 

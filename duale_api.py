@@ -18,7 +18,7 @@ from repository.mappe_repo import pst_mappe
 logger = logging.getLogger(__name__)
 
 #router = APIRouter()
-router = APIRouter(tags=["Servizi per il portale Duale"])
+router = APIRouter()
 
 # In questo router sono definite delle api che restituiscono dati geografici di vario tipo (comuni, vie, piazzole, civici, quartieri, ambiti, municipi, point of interest) con filtri opzionali e paginazione. Richiede autenticazione (Bearer Token).
 # I servizi che restituiscono i dati in un oggetto di tipo PaginatedResponse sono quelli che possono potenzialmente restituire liste molto grandi di risultati, mentre quelli che restituiscono i dati in formato JSON sono quelli che restituiscono liste più piccole di risultati quasi identici agli oggetti restituiti da ws_amiugis.

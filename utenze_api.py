@@ -9,7 +9,7 @@ from enum import Enum
 
 # i prepared statement per le query al database sono definiti nei repository corrispondenti 
 # alla tipologia di dato restituito (es. repository/vie_repo.py per le vie, repository/piazzole_repo.py per le piazzole, ecc.).
-from repository.civici_anagrafe_fasce_eta import pst_fasce_eta, pst_fasce_eta_with_count
+from repository.civici_anagrafe_fasce_eta import  pst_fasce_eta_with_count
 from repository.utenze_repo import pst_utenze_UD_with_count, pst_utenze_UND_with_count, pst_utenze_domestiche_per_civico, pst_utenze_domestiche_per_civico_total_count, pst_utenze_non_domestiche_per_civico, pst_utenze_non_domestiche_per_civico_total_count
 from repository.macro_categorie_repo import pst_macro_categorie
 
@@ -29,7 +29,7 @@ class TipoUtenza(str, Enum):
 logger = logging.getLogger(__name__)
 
 
-router = APIRouter(tags=["Utenze TARI Genova"])
+router = APIRouter()
 
 
 # Endpoint per il recupero dei layer filtrati in base a titolo mappa, livello e nome

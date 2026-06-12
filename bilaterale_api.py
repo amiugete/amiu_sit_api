@@ -24,7 +24,7 @@ from models.models import PercorsoDettaglio,Bilaterali_albero,Bilaterali
 logger = logging.getLogger(__name__)
 
 
-router = APIRouter(tags=["API Percorsi Bilaterali (ID&A)"])
+router = APIRouter()
 
 
 @router.get("/elenco_percorsi_bilaterali_tree", response_model=List[Bilaterali_albero],

@@ -16,7 +16,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["API Percorsi Posteriori (Tellus)"])
+router = APIRouter()
 
 
 

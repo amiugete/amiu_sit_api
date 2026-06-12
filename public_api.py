@@ -31,7 +31,7 @@ from repository.point_of_interest_repo import pst_pointofinterest
 logger = logging.getLogger(__name__)
 
 #router = APIRouter()
-router = APIRouter(tags=["Servizi generici"])
+router = APIRouter()
 
 
 # In questo router sono definite delle api che restituiscono dati geografici di vario tipo (comuni, vie, piazzole, civici, quartieri, ambiti, municipi, point of interest) con filtri opzionali e paginazione. Tutti questi endpoint richiedono autenticazione tramite Bearer Token e verificano i permessi dell'utente prima di restituire i dati.
@@ -274,17 +274,3 @@ def lista_point_of_interest(
     payload: dict[str, Any] = Depends(check_permissions)
 ):
     return execute_simple_query(request, pst_pointofinterest, PointOfInterest, DbConnection.SIT, {})
-
-
-
-
-
-    
-
-
-
-
-
-
-
-

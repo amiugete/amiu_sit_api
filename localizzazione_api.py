@@ -9,7 +9,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(tags=["Servizi di Localizzazione"])
+router = APIRouter()
 
 @router.get(
     "/point2area",

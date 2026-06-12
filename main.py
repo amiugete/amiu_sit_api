@@ -18,8 +18,6 @@ from tellus_api import router as tellus_router
 from localizzazione_api import router as localizzazione_router
 
 
-
-
 # Usa la data odierna per il nome del file log
 from datetime import datetime
 import os
@@ -118,14 +116,15 @@ app.include_router(prefix="/auth", tags=["Servizi di autenticazione"], router=au
 
 
 # Definizione dei router per i servizi ad con accesso autorizzato
-app.include_router(prefix="", router=public_router)
-app.include_router(prefix="/mobile", router=mobile_router)
-app.include_router(prefix="/duale", router=duale_router)
-app.include_router(prefix="/utenze", router=utenze_router)
-app.include_router(prefix="/idea", router=utenze_idea_router)
-app.include_router(prefix="/bilaterale", router=bilaterale_router)
-app.include_router(prefix="/posteriori", router=tellus_router)
-app.include_router(prefix="/locate", router=localizzazione_router)
+app.include_router(prefix="", router=public_router,tags=["Servizi generici"])
+app.include_router(prefix="/mobile", router=mobile_router,tags=["Servizi mobile"])
+app.include_router(prefix="/duale", router=duale_router,tags=["Servizi per il portale Duale"])
+app.include_router(prefix="/utenze", router=utenze_router,tags=["Utenze TARI Genova"])
+app.include_router(prefix="/idea", router=utenze_idea_router,tags=["Utenze TARI Genova per Id&A"])
+app.include_router(prefix="/bilaterale", router=bilaterale_router,tags=["API Percorsi Bilaterali (ID&A)"])
+app.include_router(prefix="/posteriori", router=tellus_router,tags=["API Percorsi Posteriori (Tellus)"])
+app.include_router(prefix="/locate", router=localizzazione_router,tags=["Servizi di Localizzazione"])
+
 
 # Mappa endpoint → path locale (senza prefisso del router), usata da check_permissions
 app.state.endpoint_local_paths = {
@@ -140,6 +139,7 @@ app.state.endpoint_local_paths = {
         (bilaterale_router,    "/bilaterale"),
         (tellus_router,        "/posteriori"),
         (localizzazione_router,"/locate"),
+
     ]
     for route in sub_router.routes
     if hasattr(route, "endpoint")

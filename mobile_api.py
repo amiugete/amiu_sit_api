@@ -17,7 +17,7 @@ from repository.piazzole_repo import pst_aste_mobile_update_foto, pst_piazzole_m
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-router = APIRouter(tags=["Servizi mobile"])
+router = APIRouter()
 
 
 
