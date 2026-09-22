@@ -139,12 +139,12 @@ I log del servizio sono disponibili nella cartella `logs`.
    DB_PASSWORD=pwdsicura
    DB_HOST=111.111.1.11
    DB_PORT=5432
-   DB_NAME=sit_test
+   DB_NAME=SIT
    ```
 
    **Database Configurazione:**
    ```env
-   DB_USER_CONFIG=user_config
+   DB_USER_CONFIG=user
    DB_PASSWORD_CONFIG=pwdsicura_config
    DB_HOST_CONFIG=111.111.1.11
    DB_PORT_CONFIG=5432
@@ -153,7 +153,7 @@ I log del servizio sono disponibili nella cartella `logs`.
 
    **Database Mappe (per WS mappe duale):**
    ```env
-   DB_USER_MAPPE=mm
+   DB_USER_MAPPE=user
    DB_PASSWORD_MAPPE=pwdsicura_mappe
    DB_HOST_MAPPE=111.111.1.11
    DB_PORT_MAPPE=5432
@@ -168,11 +168,6 @@ I log del servizio sono disponibili nella cartella `logs`.
    DB_HOST_STRADE=111.111.1.11
    DB_PORT_STRADE=1526
    DB_NAME_STRADE=PEOR
-   ```
-
-   **SQLite locale (opzionale):**
-   ```env
-   SQL_LITE_PATH=C:\sqllite\security
    ```
 
    **Autenticazione JWT:**
@@ -198,182 +193,178 @@ I log del servizio sono disponibili nella cartella `logs`.
 
 L'API sarà disponibile su `http://localhost:8000` e la documentazione interattiva su `http://localhost:8000/docs`.
 
-## 📚 API Endpoints
-
-### Servizi di Autenticazione (`/auth`)
-
-#### `POST /token`
-Genera un token JWT per autenticare un utente tramite credenziali LDAP.
-- **Request Body**: `application/x-www-form-urlencoded` con `username` e `password`.
-- **Autorizzazione**: Nessuna.
-
----
-
-### Servizi Pubblici (`/`)
-Questi endpoint richiedono autenticazione tramite Bearer Token (JWT).
-
-#### `GET /mappe`
-Recupera le mappe disponibili.
-- **Autorizzazione**: Richiesto token JWT.
-
-#### `GET /aste`
-Recupera le aste in formato GeoJSON con paginazione.
-- **Parametri**:
-   - `page`: Numero della pagina (opzionale, per paginazione)
-   - `size`: Dimensione della pagina (opzionale, per paginazione, max 100)
-   - `id_via`: Filtra per ID via (opzionale)
-   - `id_municipio`: Filtra per ID municipio (opzionale)
-   - `last_update`: Filtra per data di ultima modifica, formato `YYYYMMDD` (opzionale)
-- **Autorizzazione**: Richiesto token JWT.
-- **Risposta**: Oggetto paginato in formato GeoJSON con proprietà delle aste e geometrie.
-
-Esempio di richiesta:
-```
-GET /aste?page=1&size=50&id_municipio=2&id_via=123&last_update=20260101
-Authorization: Bearer <token>
-```
-
-#### `GET /piazzole`
-Recupera la lista delle piazzole con filtri e paginazione.
-- **Parametri**: `page`, `size`, `comune`, `municipio`, `via`, `pap`.
-- **Autorizzazione**: Richiesto token JWT.
-
-#### `GET /vie`
-Recupera la lista delle vie con filtri e paginazione.
-- **Parametri**: `page`, `size`, `comune`.
-- **Autorizzazione**: Richiesto token JWT.
-
-#### `GET /comuni`
-Recupera la lista dei comuni.
-- **Parametri**: `id_ambito`, `cod_istat`.
-- **Autorizzazione**: Richiesto token JWT.
-
-#### `GET /civici`
-Recupera la lista dei civici con filtri e paginazione.
-
-- **Parametri**:
-  - `page`: Numero della pagina (opzionale, per paginazione)
-  - `size`: Dimensione della pagina (opzionale, per paginazione, max 100)
-  - `id_municipio`: Filtra per municipio (opzionale)
-  - `id_via`: Filtra per via (opzionale)
-  - `last_update`: Filtra per data di inserimento/aggiornamento civico, formato stringa `YYYYMMDD` (opzionale)
-    - Esempio: `last_update=20260101` filtra i civici inseriti/modificati dal 1 gennaio 2026 in poi
-- **Autorizzazione**: Richiesto token JWT
-
-Risposta:
-- Se vengono indicati `page` e `size`, la risposta è paginata e include il totale.
-- Se non vengono indicati, restituisce la lista completa (max 10.000 record).
-
-Esempio di richiesta:
-```
-GET /civici?page=1&size=50&id_municipio=2&id_via=123&last_update=20260101
-Authorization: Bearer <token>
-```
-
-#### `GET /quartieri`
-Recupera la lista dei quartieri.
-- **Parametri**: `id_municipio`.
-- **Autorizzazione**: Richiesto token JWT.
-
-#### `GET /ambiti`
-Recupera la lista degli ambiti.
-- **Autorizzazione**: Richiesto token JWT.
-
-#### `GET /municipi`
-Recupera la lista dei municipi di Genova.
-- **Autorizzazione**: Richiesto token JWT.
-
-#### `GET /POI`
-Recupera i dettagli dei Punti di Interesse (Rimesse, UT e Scarichi vari).
-- **Autorizzazione**: Richiesto token JWT.
-
-#### `GET /layer_filter`
-Recupera i layer filtrati in base a titolo mappa, livello e nome.
-- **Parametri**: `t` (titolo), `l` ('ambito', 'comune', 'municipio'), `n` (nome).
-- **Autorizzazione**: Richiesto token JWT.
-
----
-
-### Servizi di Localizzazione (`/`)
-
-#### `GET /point2area`
-Restituisce le informazioni sull'area (comune, municipio, quartiere, etc.) a partire da coordinate geografiche.
-- **Parametri**: `lat` (latitudine), `lon` (longitudine).
-- **Autorizzazione**: Richiesto token JWT.
-
----
-
-### Servizi TELLUS (`/`)
-Questi endpoint forniscono dati operativi dal sistema TELLUS e richiedono autenticazione tramite Bearer Token (JWT).
-
-#### `GET /percorsi_p`
-Restituisce la lista dei percorsi posteriori con paginazione e filtro data.
-- **Parametri**: `page`, `size`, `last_update`.
-- **Autorizzazione**: Richiesto token JWT.
-
-#### `GET /piazzole_amiu`
-Restituisce la lista delle piazzole AMIU con paginazione e filtro data.
-- **Parametri**: `page`, `size`, `last_update`.
-- **Autorizzazione**: Richiesto token JWT.
-
-#### `GET /elementi_p`
-Restituisce la lista degli elementi con paginazione e filtro data.
-- **Parametri**: `page`, `size`, `last_update`.
-- **Autorizzazione**: Richiesto token JWT.
-
-
-#### `GET /mezzi_ekovision`
-Restituisce la lista dei mezzi ekovision con paginazione e filtro per data di esecuzione prevista.
-- **Parametri**: 
-   - `check_date` (obbligatorio, formato `YYYYMMDD`): data di esecuzione prevista
-   - `page`, `size` (opzionali, per paginazione)
-- **Autorizzazione**: Richiesto token JWT.
-
-#### `GET /itinerari_p`
-Restituisce la lista degli itinerari dei percorsi posteriori con paginazione e filtro data.
-- **Parametri**: `page`, `size`, `last_update`.
-- **Autorizzazione**: Richiesto token JWT.
-
-#### `GET /depositi`
-Restituisce la lista di Unità Territoriali e Rimesse con paginazione e filtro data.
-- **Parametri**: `page`, `size`, `last_update`.
-- **Autorizzazione**: Richiesto token JWT.
-
----
-
-### Servizi IDEA (`/`)
-Questi endpoint richiedono un token di autenticazione Bearer.
-
-#### `GET /utenze_tari`
-Recupera la lista delle utenze TARI (Domestiche o Non Domestiche) con paginazione.
-- **Parametri**: `tipo` ('UD' o 'UND'), `page`, `size`.
-- **Autorizzazione**: Richiesto token JWT.
-
-#### `GET /elenco_percorsi_bilaterali_tree`
-Recupera la lista dei percorsi bilaterali strutturata ad albero.
-- **Autorizzazione**: Richiesto token JWT.
-
-#### `GET /elenco_percorsi_bilaterali`
-Recupera la lista flat dei percorsi bilaterali.
-- **Autorizzazione**: Richiesto token JWT.
-
-#### `GET /dettagli_percorso`
-Recupera i dettagli di uno specifico percorso bilaterale.
-- **Parametri**: `id` del percorso.
-- **Autorizzazione**: Richiesto token JWT.
-
-## 🐛 Gestione Errori
-
-L'applicazione ritorna:
-- **200 OK**: Richiesta riuscita.
-- **400 Bad Request**: Parametri non validi (es. `livello` errato per `/layer_filter`).
-- **401 Unauthorized**: Token mancante, invalido o scaduto.
-- **403 Forbidden**: L'utente non ha i permessi per accedere alla risorsa.
-- **404 Not Found**: Risorsa o endpoint non trovato.
-- **422 Unprocessable Entity**: Dati della richiesta non validi o mancanti.
-- **500 Internal Server Error**: Errore generico del server (controllare i log).
 
 Tutti gli errori sono loggati in `app.log`.
+
+## 🧩 Pattern consigliato per creare un nuovo endpoint
+
+Il progetto usa un pattern molto uniforme per tutte le API: la query SQL è separata dal router, il modello Pydantic definisce la risposta, e i router usano sempre le stesse helper per eseguire le query.
+
+### 1. Query SQL in repository
+
+Le query sono definite in file `repository/*.py`.
+
+```python
+# repository/utenti_repo.py
+pst_ricerca_utenti = """
+    SELECT
+        id_utente,
+        nome,
+        cognome,
+        codice_fiscale,
+        id_comune
+    FROM utenti
+    WHERE
+        (:id_comune IS NULL OR id_comune = :id_comune)
+        AND (:codice_fiscale IS NULL OR codice_fiscale = :codice_fiscale)
+    ORDER BY nome, cognome
+"""
+```
+
+### 2. Modello Pydantic
+
+Il risultato viene mappato su una classe nel file `models/models.py`.
+
+```python
+from typing import Optional
+from pydantic import BaseModel
+
+class Utente(BaseModel):
+    id_utente: Optional[int] = None
+    nome: Optional[str] = None
+    cognome: Optional[str] = None
+    codice_fiscale: Optional[str] = None
+    id_comune: Optional[int] = None
+```
+
+### 3. Endpoint semplice senza paginazione
+
+Per liste non paginate si usa `execute_simple_query(...)`.
+
+```python
+from fastapi import APIRouter, Request, Query, Depends
+from typing import Any, Optional, List
+
+from business.permission import check_permissions
+from business.query_helpers import execute_simple_query
+from config.database import DbConnection
+from models.models import Utente
+from repository.utenti_repo import pst_ricerca_utenti
+
+router = APIRouter()
+
+@router.get(
+    "/ricerca-utenti",
+    response_model=List[Utente],
+    description="Recupera la lista degli utenti con filtri opzionali. Richiede autenticazione."
+)
+def ricerca_utenti(
+    request: Request,
+    id_comune: Optional[int] = Query(None, description="Filtra per comune"),
+    codice_fiscale: Optional[str] = Query(None, description="Filtra per codice fiscale"),
+    payload: dict[str, Any] = Depends(check_permissions),
+):
+    params = {
+        "id_comune": id_comune,
+        "codice_fiscale": codice_fiscale,
+    }
+
+    return execute_simple_query(
+        request,
+        pst_ricerca_utenti,
+        Utente,
+        DbConnection.SIT,
+        params,
+    )
+```
+
+In questo pattern:
+- `request: Request` viene usato dal logger
+- `payload: dict[str, Any] = Depends(check_permissions)` fa il controllo JWT + permessi
+- `Query(...)` definisce i filtri opzionali
+- `execute_simple_query(...)` esegue la query e mappa i risultati
+
+### 4. Endpoint paginato
+
+Per liste potenzialmente grandi si usa `execute_paginated_query(...)` con `page` e `size`.
+
+```python
+from fastapi import APIRouter, Request, Query, Depends
+from typing import Any, Optional, List, Union
+
+from business.permission import check_permissions
+from business.query_helpers import execute_paginated_query
+from config.database import DbConnection
+from models.models import Documento, PaginatedResponse
+from repository.documenti_repo import pst_documenti
+
+router = APIRouter()
+
+@router.get(
+    "/documenti",
+    response_model=Union[List[Documento], PaginatedResponse[Documento]],
+    description="Recupera i documenti con filtri opzionali e paginazione. Richiede autenticazione."
+)
+def lista_documenti(
+    request: Request,
+    page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
+    size: Optional[int] = Query(None, ge=1, le=100, description="Dimensione della pagina"),
+    id_comune: Optional[int] = Query(None, description="Filtra per comune"),
+    id_stato: Optional[int] = Query(None, description="Filtra per stato documento"),
+    payload: dict[str, Any] = Depends(check_permissions),
+):
+    params = {
+        "id_comune": id_comune,
+        "id_stato": id_stato,
+    }
+
+    return execute_paginated_query(
+        request,
+        pst_documenti,
+        Documento,
+        DbConnection.SIT,
+        params,
+        page,
+        size,
+    )
+```
+
+In questo caso la helper si occupa di:
+- calcolare `OFFSET` e `LIMIT`
+- determinare il totale righe
+- costruire la risposta `PaginatedResponse` con `total`, `page`, `size`, `pages`, `content`
+
+### 5. Funzioni base da usare
+
+In questo progetto la chiamata corretta è sempre una di queste due:
+
+```python
+execute_simple_query(request, query, model_class, db_conn, params)
+execute_paginated_query(request, query, model_class, db_conn, params, page, size)
+```
+
+Non è consigliato scrivere direttamente la query SQL nel router. Il pattern corretto è:
+1. definire la query in `repository/*.py`
+2. definire il modello in `models/models.py`
+3. chiamare la helper corretta
+4. aggiungere `Depends(check_permissions)` a ogni endpoint protetto
+
+### 6. Autenticazione e permessi
+
+Tutti gli endpoint sensibili devono avere il dependency di sicurezza:
+
+```python
+payload: dict[str, Any] = Depends(check_permissions)
+```
+
+Questo dipende da `business/permission.py` e fa tre cose:
+- legge il token JWT dalla request
+- valida il payload del token
+- verifica che l'utente abbia i permessi richiesti per l'endpoint
+
+Se l'utente non è autorizzato, la richiesta viene impedita con `401 Unauthorized`.
+
+Questo pattern è il medesimo usato in `public_api.py` e va rispettato per tutte le nuove API del progetto.
 
 ## 📝 Licenza
 

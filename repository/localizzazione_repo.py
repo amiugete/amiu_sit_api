@@ -1,10 +1,6 @@
 
-def prepared_statement_point2area() -> str:
-    """
-    Prepara la query per trovare le informazioni di un'area (ambito, comune, zona, etc.)
-    a partire da coordinate geografiche (lon, lat).
-    """
-    return """
+# Query per trovare le informazioni di un'area a partire da coordinate geografiche
+pst_point2area: str = """
         SELECT 
             a.id_ambito, 
             a.descr_ambito AS ambito,  

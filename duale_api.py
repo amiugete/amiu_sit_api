@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Query, Depends, HTTPException
+from fastapi import APIRouter, Query, Depends, HTTPException, Request
 from typing import Any, List
-from business.permission import get_current_user
+from business.permission import check_permissions
+from business.query_helpers import execute_simple_query
 import logging
 from enum import Enum
 
@@ -12,12 +13,12 @@ from models.models import  LayerFilterResponse, Mappa
 
 # repository
 from repository.layer_filter_repo import get_layer_filter_query
-from repository.mappe_repo import prepared_statement_mappe
+from repository.mappe_repo import pst_mappe
 
 logger = logging.getLogger(__name__)
 
 #router = APIRouter()
-router = APIRouter(tags=["Servizi per il portale Duale"])
+router = APIRouter()
 
 # In questo router sono definite delle api che restituiscono dati geografici di vario tipo (comuni, vie, piazzole, civici, quartieri, ambiti, municipi, point of interest) con filtri opzionali e paginazione. Richiede autenticazione (Bearer Token).
 # I servizi che restituiscono i dati in un oggetto di tipo PaginatedResponse sono quelli che possono potenzialmente restituire liste molto grandi di risultati, mentre quelli che restituiscono i dati in formato JSON sono quelli che restituiscono liste più piccole di risultati quasi identici agli oggetti restituiti da ws_amiugis.
@@ -27,18 +28,11 @@ router = APIRouter(tags=["Servizi per il portale Duale"])
 
 @router.get("/mappe", description="Recupera le mappe disponibili. Richiede autenticazione (Bearer Token).")
 def mappe(
-    payload: dict[str, Any] = Depends(get_current_user)
+    request: Request,
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /mappe")
-    query_select = prepared_statement_mappe()
-    listaMappe = fetch_list_by_engine(query_select, DbConnection.MAPPE, {})
-    if listaMappe is None or len(listaMappe) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-    listaMappe = [Mappa(**row) for row in listaMappe]
-    logger.info(f"Restituite {len(listaMappe)} mappe.")
-    return listaMappe
-
+    return execute_simple_query(request, pst_mappe, Mappa, DbConnection.MAPPE, {})
+    
 
 
 
@@ -53,13 +47,12 @@ class LivelloFiltro(str, Enum):
     description="Recupera i layer filtrati in base a titolo mappa, livello e nome. Richiede autenticazione (Bearer Token)."
 )
 def get_layer_filter(
+    request: Request,
     t: str = Query(..., description="Titolo della mappa"), 
     l: LivelloFiltro = Query(..., description="Livello del filtro"),
     n: str = Query(..., description="Nome da usare nel filtro"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info(f"Ricevuta richiesta GET /layer_filter con t={t}, l={l.value}, n={n}")
-    
     try:
         query = get_layer_filter_query(level=l.value)
     except ValueError as e:
@@ -72,7 +65,7 @@ def get_layer_filter(
     layer_rows = fetch_list_by_engine(query, DbConnection.SIT, params)
     
     if layer_rows is None or len(layer_rows) == 0:
-        logger.info(f"Nessun risultato ottenuto dalla query per /layer_filter con parametri t={t}, l={l.value}, n={n}")
+        logger.info(f"Nessun risultato ottenuto dalla query per {request.url.path} con parametri t={t}, l={l.value}, n={n}")
         return []
 
     result_list = [LayerFilterResponse(**row) for row in layer_rows]

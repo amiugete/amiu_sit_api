@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Query, Depends, HTTPException, status
+from fastapi import APIRouter, Query, Depends,Request
 from typing import Any, List, Optional, Union
-from business.permission import get_current_user, verifica_permesso_utenze
-from business.utility import get_total_count_from_rows
+from business.permission import check_permissions
+from business.query_helpers import execute_simple_query, execute_paginated_query
 
 from models.models import UtenzeDomestichePerCivico, UtenzeNonDomestichePerCivico,FasceEtaCivico, PaginatedResponse, MacroCategoria, Utenza
 import logging
@@ -9,10 +9,11 @@ from enum import Enum
 
 # i prepared statement per le query al database sono definiti nei repository corrispondenti 
 # alla tipologia di dato restituito (es. repository/vie_repo.py per le vie, repository/piazzole_repo.py per le piazzole, ecc.).
-from repository.civici_anagrafe_fasce_eta import prepared_statement_fasce_eta, prepared_statement_fasce_eta_with_count
-from repository.utenze_repo import prepared_statement_utenze_UD_with_count, prepared_statement_utenze_UND_with_count, prepared_statement_utenze_domestiche_per_civico, prepared_statement_utenze_domestiche_per_civico_total_count, prepared_statement_utenze_non_domestiche_per_civico, prepared_statement_utenze_non_domestiche_per_civico_total_count
-from repository.macro_categorie_repo import prepared_statement_macro_categorie
+from repository.civici_anagrafe_fasce_eta import  pst_fasce_eta_with_count
+from repository.utenze_repo import pst_utenze_UD_with_count, pst_utenze_UND_with_count, pst_utenze_domestiche_per_civico, pst_utenze_domestiche_per_civico_total_count, pst_utenze_non_domestiche_per_civico, pst_utenze_non_domestiche_per_civico_total_count
+from repository.macro_categorie_repo import pst_macro_categorie
 
+# Per la scelta del database da utilizzare per ogni query, utilizzo DbConnection definito in config/database.py, che contiene i nomi dei database configurati in config/database.py. In questo modo, se in futuro dovessi cambiare il database o aggiungerne uno nuovo, basterà modificare la configurazione senza dover modificare le query nei repository o le chiamate a queste query negli endpoint.
 from config.database import fetch_list_by_engine, fetch_count_by_engine, DbConnection
 
 
@@ -28,30 +29,17 @@ class TipoUtenza(str, Enum):
 logger = logging.getLogger(__name__)
 
 
-router = APIRouter(tags=["Utenze TARI Genova"])
+router = APIRouter()
 
 
 # Endpoint per il recupero dei layer filtrati in base a titolo mappa, livello e nome
 @router.get("/macro_categorie", description="""Recupera le macro categorie TARI delle utenze del Comune di Genova.
             Richiede autenticazione (Bearer Token).""")
 def macro_categorie(
-    payload: dict[str, Any] = Depends(get_current_user)
+    request: Request,
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /macro_categorie")
-    query_select = prepared_statement_macro_categorie()
-    listaMacroCategorie = fetch_list_by_engine(query_select, DbConnection.STRADE, {})
-    if listaMacroCategorie is None or len(listaMacroCategorie) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
-        return []
-    listaMacroCategorie = [MacroCategoria(**row) for row in listaMacroCategorie]
-    logger.info(f"Restituite {len(listaMacroCategorie)} macro categorie.")
-    return listaMacroCategorie
-
-
-
-
-
-
+    return execute_simple_query(request, pst_macro_categorie, MacroCategoria, DbConnection.STRADE, {})
 
 
 @router.get("/utenze_tari", response_model= PaginatedResponse[Utenza],
@@ -59,69 +47,23 @@ def macro_categorie(
                             Paginazione opzionale gestita tramite parametri page e size nella request.
                             Richiede autenticazione (Bearer Token).
                             Per motivi di privacy l'acceso è consentito solo agli utenti con permessi specifici per accedere a questo endpoint, altrimenti viene restituito un errore 403 Forbidden.""")
-def lista_utenze(
+def lista_utenze( 
+    request: Request,
     tipo: TipoUtenza = Query(..., description="Filtra per tipo di utenza (UD = Domestica o UND = Non Domestica)"),
-    payload: dict[str, Any] = Depends(get_current_user),
+    payload: dict[str, Any] = Depends(check_permissions),
     page: int = Query(..., ge=1, description="Numero della pagina"),
     size: int = Query(..., ge=1, le=1000, description="Dimensione della pagina")
 ):
     """Endpoint per recuperare la lista delle utenze con autenticazione."""
-    
-    # Verifica dei permessi dell'utente per accedere a questo endpoint prendendo le informazioni dal payload ottenuto con get_current_user
-    is_auth,msg = verifica_permesso_utenze(payload, "/utenze_tari")
-
-    if not is_auth:
-        logger.warning(f"Accesso non autorizzato all'endpoint /utenze_tari per l'utente ID {payload.get('user_id')}: {msg}")
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"{msg}"
-        )
-    
-    logger.info("Ricevuta richiesta GET /utenze_tari")
-    lista_dict_utenze: List[dict] | Any = None
-    list_utenze : List[Utenza] = []
-    result: PaginatedResponse[Utenza] = PaginatedResponse[Utenza]()
-    query_select = ''
-    offset = None
-    limit = None 
-
-    if page is not None and size is not None and size > 0:
-        offset = (page - 1) * size
-        limit = size
-
-    if limit is not None and offset is not None:
-        if tipo == TipoUtenza.UD:
-            query_select = prepared_statement_utenze_UD_with_count()
-        else:
-            query_select = prepared_statement_utenze_UND_with_count()
-
-        lista_dict_utenze = fetch_list_by_engine(query_select, DbConnection.SIT, {"limit": limit, "offset": offset})
-        if lista_dict_utenze is None or len(lista_dict_utenze) == 0:
-            logger.info("Nessun risultato ottenuto dalla query.")
-            result.content = []
-            result.total = 0
-            result.page = page
-            result.size = size
-            result.pages = 0
-            return result
-
-            # estrazione total_count colonna per paginazione
-        total = get_total_count_from_rows(lista_dict_utenze)
-
-        list_utenze = [Utenza(**row) for row in lista_dict_utenze]
-
-
-        result.total = total
-        result.content = list_utenze
-        result.page = page
-        result.size = size
-        result.pages = (result.total + size - 1) // size if size else 0
-        logger.info(f"Restituite {result.total} utenze.")
-
-        logger.info(f"Restituite {len(list_utenze)} utenze.") 
-        return result
-
-    return result
+    query = pst_utenze_UD_with_count if tipo == TipoUtenza.UD else pst_utenze_UND_with_count
+    return execute_paginated_query(request,
+                                   query,
+                                   Utenza,
+                                   DbConnection.SIT, 
+                                   {},
+                                   page,
+                                   size
+                                   )
 
 @router.get(
     "/civici/utenze_tari",
@@ -132,15 +74,15 @@ def lista_utenze(
     Richiede autenticazione (Bearer Token)."""
 )
 def lista_utenze_civici(
+    request: Request,
     tipo: TipoUtenza = Query(..., description="Filtra per tipo di utenza (UD = Domestica o UND = Non Domestica)"),
-    payload: dict[str, Any] = Depends(get_current_user),
+    payload: dict[str, Any] = Depends(check_permissions),
     id_via: Optional[int] = Query(None, description="Filtra per via"),
     cod_civico: Optional[int] = Query(None, description="Filtra per civico"),
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=1000, description="Dimensione della pagina")
 ):
     """Endpoint per recuperare la lista delle utenze con autenticazione."""
-    logger.info("Ricevuta richiesta GET /civici/utenze_tari")
 
     lista_dict_utenze: List[dict] | Any = None
     result: PaginatedResponse[Any] = PaginatedResponse[Any]()
@@ -153,16 +95,16 @@ def lista_utenze_civici(
         limit = size
     
     if tipo == TipoUtenza.UD:
-        query_select = prepared_statement_utenze_domestiche_per_civico()
+        query_select = pst_utenze_domestiche_per_civico
         if limit is not None and offset is not None:
-            totale_pagination_query = prepared_statement_utenze_domestiche_per_civico_total_count()
+            totale_pagination_query = pst_utenze_domestiche_per_civico_total_count
             total_count = fetch_count_by_engine(totale_pagination_query, DbConnection.STRADE, {"id_via": id_via, "cod_civico": cod_civico})
             if total_count is not None:
                 result.total = total_count
     else:
-        query_select = prepared_statement_utenze_non_domestiche_per_civico()
+        query_select = pst_utenze_non_domestiche_per_civico
         if limit is not None and offset is not None:
-            totale_pagination_query = prepared_statement_utenze_non_domestiche_per_civico_total_count()
+            totale_pagination_query = pst_utenze_non_domestiche_per_civico_total_count
             total_count = fetch_count_by_engine(totale_pagination_query, DbConnection.STRADE, {"id_via": id_via, "cod_civico": cod_civico})
             if total_count is not None:
                 result.total = total_count
@@ -173,7 +115,7 @@ def lista_utenze_civici(
                                                                   "cod_civico": cod_civico})
 
     if lista_dict_utenze is None or len(lista_dict_utenze) == 0:
-        logger.info("Nessun risultato ottenuto dalla query.")
+        logger.info(f"Nessun risultato ottenuto dalla query per endpoint {request.url.path}.")
         result.content = []
         result.total = 0
         result.page = page
@@ -190,8 +132,8 @@ def lista_utenze_civici(
     result.page = page
     result.size = size
     result.pages = (result.total + size - 1) // size if size else 0
-    logger.info(f"Restituite {result.total} utenze.")
-    logger.info(f"Restituite {len(list_utenze)} utenze.")
+    logger.info(f"Restituite {result.total} utenze per endpoint {request.url.path}.")
+    logger.info(f"Restituite {len(list_utenze)} utenze per endpoint {request.url.path}.")
 
     return result
     
@@ -200,57 +142,22 @@ def lista_utenze_civici(
 
 @router.get("/civici/anagrafe/fasce_eta", response_model=Union[PaginatedResponse[FasceEtaCivico ], List[FasceEtaCivico]]  , description="Recupera la lista dei civici ragruppandoli per le fasce di età con filtri opzionali. Paginazione opzionale gestita tramite parametri page e size nella request. Richiede autenticazione (Bearer Token).")
 def lista_civici_fasce_eta(
+    request: Request,
     page: Optional[int] = Query(None, ge=1, description="Numero della pagina"),
     size: Optional[int] = Query(None, ge=1, le=1000, description="Dimensione della pagina"),
     id_via: Optional[int] = Query(None, description="Filtra per via"),
     cod_civico: Optional[int] = Query(None, description="Filtra per civico"),
-    payload: dict[str, Any] = Depends(get_current_user)
+    payload: dict[str, Any] = Depends(check_permissions)
 ):
-    logger.info("Ricevuta richiesta GET /civici/anagrafe/fasce_eta")
-    listCivici: List[dict] | None
-    query_select = ''
-    offset = None
-    limit = None
-    
-    if page is not None and size is not None and size > 0:     
-        offset = (page - 1) * size
-        limit = size
-    
-    params = {"id_via": id_via, "cod_civico": cod_civico}
-    
-    if limit is not None and offset is not None:
-        query_select = prepared_statement_fasce_eta_with_count()
-        listCivici = fetch_list_by_engine(query_select, DbConnection.STRADE, {**params, "limit": limit, "offset": offset})
-
-        if listCivici is None or len(listCivici) == 0:
-            logger.info("Nessun risultato ottenuto dalla query.")
-            return []
-        
-
-
-            # estrazione total_count colonna per paginazione
-        total = get_total_count_from_rows(listCivici)
-        listCivici = [FasceEtaCivico(**row) for row in listCivici]
-        result = PaginatedResponse[FasceEtaCivico]()
-        result.total = total
-        result.content = listCivici
-        result.page = page
-        result.size = size
-        result.pages = (result.total + size - 1) // size if size else 0
-        logger.info(f"Restituiti {result.total} record.")
-    else:
-        query_select = prepared_statement_fasce_eta()
-        listCivici = fetch_list_by_engine(query_select, DbConnection.STRADE, {**params})
-
-        if listCivici is None or len(listCivici) == 0:
-            logger.info("Nessun risultato ottenuto dalla query.")
-            return []
-        
-        listCivici = [FasceEtaCivico(**row) for row in listCivici]
-        logger.info(f"Restituiti {len(listCivici)} record.") 
-        return listCivici
-    
-    return result
+    return execute_paginated_query(
+        request,
+        pst_fasce_eta_with_count, 
+        FasceEtaCivico,
+        DbConnection.STRADE,
+        {"id_via": id_via, "cod_civico": cod_civico},
+        page, 
+        size
+    )
 
 
 

@@ -1,6 +1,5 @@
-def prepared_statement_bilaterali_albero() -> str:
-    """Query unificata per il recupero dell'albero dei percorsi dei bilaterali."""
-    return """
+# Query unificata per il recupero dell'albero dei percorsi dei bilaterali
+pst_bilaterali_albero: str = """
                 select * from  
                 (
                     select * from etl.v_percorsi_bilaterali_1
@@ -26,9 +25,8 @@ def prepared_statement_bilaterali_albero() -> str:
                     end
               """
 
-def prepared_statement_bilaterali() -> str:
-    """Query unificata per il recupero dei percorsi dei bilaterali."""
-    return """
+# Query unificata per il recupero dei percorsi dei bilaterali
+pst_bilaterali: str = """
             select f.id_area as id_padre, 
                 ut_responsabile, 
                 id_tipo_rifiuto, 
@@ -48,9 +46,8 @@ def prepared_statement_bilaterali() -> str:
             cod_percorso, desc_percorso, frequenza
               """
 
-def prepared_statement_percorso_dettaglio() -> str:
-    """Query unificata per il recupero dei percorsi dei bilaterali."""
-    return """
+# Query unificata per il recupero del dettaglio dei percorsi bilaterali
+pst_percorso_dettaglio: str = """
         select
             row_number() OVER (order by ap2.num_seq) AS seq,
             e.id_piazzola, v.nome as via,

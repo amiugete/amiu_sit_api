@@ -1,9 +1,8 @@
 
 # Repository per le utenze, con query SQL predefinite per il recupero dei dati.
 
-def prepared_statement_utenze_UD_with_count() -> str:
-    """Query unificata per il recupero delle utenze per UD."""
-    return """
+# Query unificata per il recupero delle utenze per UD
+pst_utenze_UD_with_count: str = """
             SELECT id_utente, 
             progr_utenza as progressivo,
             cod_via, 
@@ -20,9 +19,8 @@ def prepared_statement_utenze_UD_with_count() -> str:
             LIMIT :limit
             OFFSET :offset
                     """
-def prepared_statement_utenze_UND_with_count() -> str:
-    """Query unificata per il recupero delle utenze per UND."""
-    return """
+# Query unificata per il recupero delle utenze per UND
+pst_utenze_UND_with_count: str = """
             SELECT id_utente, 
             progr_utenza as progressivo,
             nominativo, 
@@ -43,18 +41,16 @@ def prepared_statement_utenze_UND_with_count() -> str:
 
 # Repository per le utenze Id&A (query analoghe alle precedenti ma su tabelle ristrette dedicate a Id&A, senza total count)
 
-def prepared_statement_utenze_UD_idea_with_count() -> str:
-    """Query unificata per il recupero delle utenze per UD."""
-    return """
+# Query unificata per il recupero delle utenze UD (Id&A)
+pst_utenze_UD_idea_with_count: str = """
             SELECT *, COUNT(*) OVER() AS total_count
             FROM etl.utenze_tia_domestiche_idea
             ORDER BY id_utenza
             LIMIT :limit
             OFFSET :offset
            """
-def prepared_statement_utenze_UND_idea_with_count() -> str:
-    """Query unificata per il recupero delle utenze per UND."""
-    return """
+# Query unificata per il recupero delle utenze UND (Id&A)
+pst_utenze_UND_idea_with_count: str = """
             SELECT *, COUNT(*) OVER() AS total_count
             FROM etl.utenze_tia_non_domestiche_idea
             ORDER BY id_utenza
@@ -70,9 +66,8 @@ def prepared_statement_utenze_UND_idea_with_count() -> str:
 
 # utenze per civico (query più complesse, con raggruppamenti e total count separato)
 
-def prepared_statement_utenze_domestiche_per_civico() -> str:
-    """Query per il recupero delle utenze domestiche per civico (paginata, senza total count)."""
-    return """
+# Query per il recupero delle utenze domestiche per civico (paginata)
+pst_utenze_domestiche_per_civico: str = """
             SELECT * FROM (
                 SELECT a.*, ROWNUM AS rnum
                 FROM (
@@ -97,9 +92,8 @@ def prepared_statement_utenze_domestiche_per_civico() -> str:
            """
 
 
-def prepared_statement_utenze_domestiche_per_civico_total_count() -> int:
-    """Query per il recupero del total count delle utenze domestiche per civico."""
-    return """
+# Query per il total count delle utenze domestiche per civico
+pst_utenze_domestiche_per_civico_total_count: str = """
             SELECT COUNT(*) AS total_count
             FROM (
                 SELECT 
@@ -117,9 +111,8 @@ def prepared_statement_utenze_domestiche_per_civico_total_count() -> int:
            """
 
 
-def prepared_statement_utenze_non_domestiche_per_civico() -> str:
-    """Query per il recupero delle utenze non domestiche per civico (paginata, senza total count)."""
-    return """
+# Query per il recupero delle utenze non domestiche per civico (paginata)
+pst_utenze_non_domestiche_per_civico: str = """
             SELECT * FROM (
                 SELECT a.*, ROWNUM AS rnum
                 FROM (
@@ -142,9 +135,8 @@ def prepared_statement_utenze_non_domestiche_per_civico() -> str:
             AND (:cod_civico IS NULL OR COD_CIVICO = :cod_civico)
         """
 
-def prepared_statement_utenze_non_domestiche_per_civico_total_count() -> int:
-    """Query per il recupero del total count delle utenze non domestiche per civico."""
-    return """
+# Query per il total count delle utenze non domestiche per civico
+pst_utenze_non_domestiche_per_civico_total_count: str = """
             SELECT COUNT(*) AS total_count
             FROM (
                 SELECT 

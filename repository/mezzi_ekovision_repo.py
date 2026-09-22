@@ -1,6 +1,5 @@
-def prepared_statement_mezzi_ekovision() -> str:
-    """Query per elenco mezzi ekovision, con paginazione e total_count."""
-    return """
+# Query per elenco mezzi ekovision, con paginazione e total_count
+pst_mezzi_ekovision: str = """
         SELECT m.id_scheda_ekovision, 
                see.data_esecuzione_prevista, 
                see.orario_esecuzione, 

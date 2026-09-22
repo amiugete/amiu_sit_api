@@ -1,8 +1,7 @@
 
 
-def prepared_statement_quartieri() -> str:
-    """Preparazione della query per il recupero dei quartieri con filtri opzionali(id_municipio)"""
-    return  """
+# Preparazione della query per il recupero dei quartieri con filtri opzionali(id_municipio)
+pst_quartieri: str = """
           select q.id_quartiere, 
           q.id_municipio, 
           q.id_comune, 

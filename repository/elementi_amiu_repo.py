@@ -1,6 +1,5 @@
-def prepared_statement_elementi_amiu() -> str:
-    """Query per il recupero degli elementi dei posteriori, con paginazione, filtro last_update e total_count."""
-    return """
+# Query per il recupero degli elementi amiu con paginazione, filtro last_update e total_count
+pst_elementi_amiu: str = """
         SELECT *, CASE WHEN :limit = 1000 AND :offset = 0 THEN 1000 ELSE COUNT(*) OVER() END AS total_count
         FROM (
             SELECT id_elemento, id_piazzola, ee.tipo_elemento AS id_tipo_elemento,

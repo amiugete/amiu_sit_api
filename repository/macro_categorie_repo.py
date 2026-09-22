@@ -1,8 +1,8 @@
 
 
 
-def prepared_statement_macro_categorie() -> str:
-    return """
+# Query per il recupero delle macro categorie utenze
+pst_macro_categorie: str = """
        SELECT DISTINCT
        CASE
 	   WHEN NOT ( (   i.categoria IN (90, 300, 301)

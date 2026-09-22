@@ -1,10 +1,6 @@
 
-def prepared_statement_depositi() -> str:
-    """
-    Prepara la query per recuperare le Unità Territoriali e le Rimesse, 
-    con supporto per paginazione e filtro sulla data di ultima modifica.
-    """
-    return """
+# Query per recuperare Unità Territoriali e Rimesse con paginazione e filtro last_update
+pst_depositi: str = """
         SELECT *, COUNT(*) OVER() as total_count 
         FROM (
             -- Parte 1: Rimessa
