@@ -68,7 +68,7 @@ def verifica_permessi_endpoint_utente(payload: dict[str, any], indirizzo_ws) -> 
     
     for permesso in permessi_necessari:
         if permesso in permessi_utente:
-            logger.info(f"Utente ID {payload.get('user_id')} autorizzato per l'endpoint {indirizzo_ws} con permesso {permesso}.")
+            logger.info(f"Utente ID {payload.get('sub')} autorizzato per l'endpoint {indirizzo_ws} con permesso {permesso}.")
             return
         else:
             continue

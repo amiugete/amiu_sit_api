@@ -81,6 +81,7 @@ def execute_paginated_query(
     query base (senza LIMIT/OFFSET) e aggiunge LIMIT/OFFSET automaticamente;
     se è False, la query deve includere già :limit/:offset come parametri e
     la colonna total_count nel risultato per il totale.
+    Se non vengono indicati page e size, la query viene eseguita con  paginazione automatica usando il default_limit(ad una sola pagina).
 
     Args:
         query: prepared statement SQL.
